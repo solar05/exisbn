@@ -26,8 +26,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: deps
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
+        key: ubuntu20-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ubuntu20-mix-
     - name: Install dependencies
       run: mix deps.get
     - name: Run tests
