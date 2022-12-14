@@ -1,3 +1,4 @@
+[![CI](https://github.com/solar05/exisbn/actions/workflows/elixir.yml/badge.svg)](https://github.com/solar05/exisbn/actions/workflows/elixir.yml)
 # Exisbn
 
 ISBN utility library for Elixir.
