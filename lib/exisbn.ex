@@ -17,7 +17,8 @@ defmodule Exisbn do
       iex> Exisbn.isbn10_checkdigit("0str")
       nil
   """
-  def isbn10_checkdigit(isbn) do
+  @spec isbn10_checkdigit(String.t()) :: nil | <<_::8>> | integer
+  def isbn10_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
       nsum =
         isbn
@@ -51,7 +52,8 @@ defmodule Exisbn do
       iex> Exisbn.isbn13_checkdigit("0str")
       nil
   """
-  def isbn13_checkdigit(isbn) do
+  @spec isbn13_checkdigit(binary) :: nil | integer
+  def isbn13_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 11..13 do
       nsum =
         isbn
@@ -85,7 +87,8 @@ defmodule Exisbn do
       iex> Exisbn.checkdigit_correct?("978-5-12345-678")
       false
   """
-  def checkdigit_correct?(isbn) do
+  @spec checkdigit_correct?(String.t()) :: boolean
+  def checkdigit_correct?(isbn) when is_bitstring(isbn) do
     normalized = normalize(isbn)
 
     digit =
@@ -121,6 +124,32 @@ defmodule Exisbn do
       without_incorrect_chars?(isbn),
       checkdigit_correct?(isbn)
     ])
+  end
+
+  @doc """
+  Takes an ISBN 10 and converts it to ISBN 13.
+
+  ## Examples
+
+      iex> Exisbn.isbn10_to_13("85-359-0277-5")
+      "9788535902778"
+      iex> Exisbn.valid?("9788535902778")
+      true
+      iex> Exisbn.isbn10_to_13("0306406152")
+      "9780306406157"
+      iex> Exisbn.valid?("9780306406157")
+      true
+      iex> Exisbn.isbn10_to_13("0-19-853453123")
+      nil
+  """
+  @spec isbn10_to_13(String.t()) :: String.t() | nil
+  def isbn10_to_13(isbn) when is_bitstring(isbn) do
+    if valid?(normalize(isbn)) do
+      first_chars = "978#{String.slice(normalize(isbn), 0..8)}"
+      "#{first_chars}#{isbn13_checkdigit(first_chars)}"
+    else
+      nil
+    end
   end
 
   defp normalize(isbn) do
