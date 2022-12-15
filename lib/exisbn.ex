@@ -10,12 +10,12 @@ defmodule Exisbn do
 
   ## Examples
 
-    iex> Exisbn.isbn10_checkdigit("85-359-0277")
-    5
-    iex> Exisbn.isbn10_checkdigit("5-02-013850")
-    9
-    iex> Exisbn.isbn10_checkdigit("0str")
-    nil
+      iex> Exisbn.isbn10_checkdigit("85-359-0277")
+      5
+      iex> Exisbn.isbn10_checkdigit("5-02-013850")
+      9
+      iex> Exisbn.isbn10_checkdigit("0str")
+      nil
   """
   def isbn10_checkdigit(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
@@ -44,12 +44,12 @@ defmodule Exisbn do
 
   ## Examples
 
-    iex> Exisbn.isbn13_checkdigit("978-5-12345-678")
-    1
-    iex> Exisbn.isbn13_checkdigit("978-0-306-40615")
-    7
-    iex> Exisbn.isbn13_checkdigit("0str")
-    nil
+      iex> Exisbn.isbn13_checkdigit("978-5-12345-678")
+      1
+      iex> Exisbn.isbn13_checkdigit("978-0-306-40615")
+      7
+      iex> Exisbn.isbn13_checkdigit("0str")
+      nil
   """
   def isbn13_checkdigit(isbn) do
     if String.length(normalize(isbn)) in 11..13 do
@@ -78,12 +78,12 @@ defmodule Exisbn do
 
   ## Examples
 
-    iex> Exisbn.checkdigit_correct?("85-359-0277-5")
-    true
-    iex> Exisbn.checkdigit_correct?("978-5-12345-678-1")
-    true
-    iex> Exisbn.checkdigit_correct?("978-5-12345-678")
-    false
+      iex> Exisbn.checkdigit_correct?("85-359-0277-5")
+      true
+      iex> Exisbn.checkdigit_correct?("978-5-12345-678-1")
+      true
+      iex> Exisbn.checkdigit_correct?("978-5-12345-678")
+      false
   """
   def checkdigit_correct?(isbn) do
     normalized = normalize(isbn)
@@ -103,16 +103,16 @@ defmodule Exisbn do
 
   ## Examples
 
-    iex> Exisbn.valid?("978-5-12345-678-1")
-    true
-    iex> Exisbn.valid?("978-5-12345-678-1")
-    true
-    iex> Exisbn.valid?("978-5-12345-678")
-    false
-    iex> Exisbn.valid?("85-359-0277-5")
-    true
-    iex> Exisbn.valid?("85-359-0277")
-    false
+      iex> Exisbn.valid?("978-5-12345-678-1")
+      true
+      iex> Exisbn.valid?("978-5-12345-678-1")
+      true
+      iex> Exisbn.valid?("978-5-12345-678")
+      false
+      iex> Exisbn.valid?("85-359-0277-5")
+      true
+      iex> Exisbn.valid?("85-359-0277")
+      false
   """
   @spec valid?(String.t()) :: boolean
   def valid?(isbn) do
