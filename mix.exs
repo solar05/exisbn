@@ -38,7 +38,7 @@ defmodule Exisbn.MixProject do
   defp package() do
     [
       name: "exisbn",
-      files: ~w(lib .formatter.exs mix.exs README* LICENSE* CHANGELOG* src),
+      files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/solar05/exisbn"}
     ]
