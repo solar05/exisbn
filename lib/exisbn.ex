@@ -102,7 +102,7 @@ defmodule Exisbn do
   end
 
   @doc """
-  Takes and ISBN (10 or 13) and checks its validity by checking the checkdigit, length and characters.
+  Takes an ISBN (10 or 13) and checks its validity by checking the checkdigit, length and characters.
 
   ## Examples
 
