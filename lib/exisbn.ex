@@ -252,6 +252,49 @@ defmodule Exisbn do
     end
   end
 
+  @doc """
+  Takes an ISBN and returns its registrant element.
+
+  ## Examples
+
+      iex> Exisbn.fetch_registrant_element("9788535902778")
+      "359"
+      iex> Exisbn.fetch_registrant_element("978-1-86197-876-9")
+      "86197"
+      iex> Exisbn.fetch_registrant_element("9789529351787")
+      "93"
+      iex> Exisbn.fetch_registrant_element("str")
+      nil
+  """
+  @spec fetch_registrant_element(String.t()) :: nil | String.t()
+  def fetch_registrant_element(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+
+      prefix = get_prefix(prepared_isbn)
+      ranges = fetch_ranges(prepared_isbn)
+
+      body =
+        prepared_isbn
+        |> drop_chars(String.length(prefix) - 1)
+        |> String.reverse()
+        |> drop_chars(1)
+        |> String.reverse()
+
+      Enum.reduce_while(ranges, "", fn range, _ ->
+        beg = to_int(List.first(range))
+        ending = to_int(List.last(range))
+        length = String.length(List.last(range)) - 1
+        range_part = String.slice(body, 0..length)
+        area = to_int(range_part)
+
+        if beg <= area && area <= ending, do: {:halt, range_part}, else: {:cont, nil}
+      end)
+    else
+      nil
+    end
+  end
+
   defp normalize(isbn) do
     isbn
     |> String.split("", trim: true)
@@ -274,8 +317,12 @@ defmodule Exisbn do
     length == 10
   end
 
-  defp to_int(char) do
+  defp to_int(char) when is_bitstring(char) do
     {number, _} = Integer.parse(char)
+    number
+  end
+
+  defp to_int(number) when is_integer(number) do
     number
   end
 
@@ -303,5 +350,9 @@ defmodule Exisbn do
 
   defp fetch_info(isbn) do
     Map.get(Regions.dataset(), get_prefix(isbn))
+  end
+
+  def fetch_ranges(isbn) do
+    Map.get(fetch_info(isbn), "ranges")
   end
 end
