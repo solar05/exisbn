@@ -1,6 +1,8 @@
 defmodule Exisbn do
   require Integer
 
+  alias Exisbn.Regions
+
   @moduledoc """
   Documentation for `Exisbn`.
   """
@@ -144,9 +146,107 @@ defmodule Exisbn do
   """
   @spec isbn10_to_13(String.t()) :: String.t() | nil
   def isbn10_to_13(isbn) when is_bitstring(isbn) do
-    if valid?(normalize(isbn)) do
+    if correct?(isbn) do
       first_chars = "978#{String.slice(normalize(isbn), 0..8)}"
       "#{first_chars}#{isbn13_checkdigit(first_chars)}"
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN 13 and converts it to ISBN 10.
+
+  ## Examples
+
+      iex> Exisbn.isbn13_to_10("9788535902778")
+      "8535902775"
+      iex> Exisbn.valid?("8535902775")
+      true
+      iex> Exisbn.isbn13_to_10("9780306406157")
+      "0306406152"
+      iex> Exisbn.valid?("0306406152")
+      true
+      iex> Exisbn.isbn13_to_10("str")
+      nil
+  """
+  @spec isbn13_to_10(String.t()) :: String.t() | nil
+  def isbn13_to_10(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      first_chars =
+        isbn
+        |> normalize()
+        |> drop_chars(3)
+        |> String.slice(0..8)
+
+      "#{first_chars}#{isbn10_checkdigit(first_chars)}"
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN and returns its publisher zone.
+
+  ## Examples
+
+      iex> Exisbn.publisher_zone("9788535902778")
+      "Brazil"
+      iex> Exisbn.publisher_zone("2-1234-5680-2")
+      "French language"
+      iex> Exisbn.publisher_zone("str")
+      nil
+  """
+  @spec publisher_zone(String.t()) :: String.t() | nil
+  def publisher_zone(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+
+      Map.get(fetch_info(prepared_isbn), "name")
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN and returns its prefix.
+
+  ## Examples
+
+      iex> Exisbn.get_prefix("9788535902778")
+      "978-85"
+      iex> Exisbn.get_prefix("2-1234-5680-2")
+      "978-2"
+      iex> Exisbn.get_prefix("str")
+      nil
+  """
+  @spec get_prefix(String.t()) :: String.t() | nil
+  def get_prefix(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+
+      get_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN and returns its checkdigit.
+
+  ## Examples
+
+      iex> Exisbn.fetch_checkdigit("9788535902778")
+      8
+      iex> Exisbn.fetch_checkdigit("2-1234-5680-2")
+      2
+      iex> Exisbn.fetch_checkdigit("str")
+      nil
+  """
+  @spec fetch_checkdigit(String.t()) :: String.t() | nil
+  def fetch_checkdigit(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      to_int(String.last(isbn))
     else
       nil
     end
@@ -179,7 +279,29 @@ defmodule Exisbn do
     number
   end
 
+  defp correct?(isbn) do
+    valid?(normalize(isbn))
+  end
+
+  defp drop_chars(str, amount) do
+    String.slice(str, amount..String.length(str))
+  end
+
   defp is_digit(ch) do
     Enum.member?(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], ch)
+  end
+
+  defp get_prefix(prefix, body, search_length) do
+    search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
+
+    if Map.has_key?(Regions.dataset(), search_prefix) do
+      search_prefix
+    else
+      get_prefix(prefix, body, search_length + 1)
+    end
+  end
+
+  defp fetch_info(isbn) do
+    Map.get(Regions.dataset(), get_prefix(isbn))
   end
 end
