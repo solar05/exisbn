@@ -213,19 +213,19 @@ defmodule Exisbn do
 
   ## Examples
 
-      iex> Exisbn.get_prefix("9788535902778")
+      iex> Exisbn.fetch_prefix("9788535902778")
       "978-85"
-      iex> Exisbn.get_prefix("2-1234-5680-2")
+      iex> Exisbn.fetch_prefix("2-1234-5680-2")
       "978-2"
-      iex> Exisbn.get_prefix("str")
+      iex> Exisbn.fetch_prefix("str")
       nil
   """
-  @spec get_prefix(String.t()) :: String.t() | nil
-  def get_prefix(isbn) when is_bitstring(isbn) do
+  @spec fetch_prefix(String.t()) :: String.t() | nil
+  def fetch_prefix(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
 
-      get_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)
+      fetch_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)
     else
       nil
     end
@@ -271,15 +271,10 @@ defmodule Exisbn do
     if correct?(isbn) do
       prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
 
-      prefix = get_prefix(prepared_isbn)
+      prefix = fetch_prefix(prepared_isbn)
       ranges = fetch_ranges(prepared_isbn)
 
-      body =
-        prepared_isbn
-        |> drop_chars(String.length(prefix) - 1)
-        |> String.reverse()
-        |> drop_chars(1)
-        |> String.reverse()
+      body = fetch_body(prepared_isbn, prefix)
 
       Enum.reduce_while(ranges, "", fn range, _ ->
         beg = to_int(List.first(range))
@@ -292,6 +287,138 @@ defmodule Exisbn do
       end)
     else
       nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN and returns its publication element.
+
+  ## Examples
+
+      iex> Exisbn.fetch_publication_element("978-1-86197-876-9")
+      "876"
+      iex> Exisbn.fetch_publication_element("9789529351787")
+      "5178"
+      iex> Exisbn.fetch_publication_element("str")
+      nil
+  """
+  @spec fetch_publication_element(String.t()) :: nil | String.t()
+  def fetch_publication_element(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+      prefix = fetch_prefix(prepared_isbn) |> normalize()
+      body = fetch_body(prepared_isbn, prefix)
+      registrant = fetch_registrant_element(prepared_isbn)
+
+      drop_chars(body, String.length(registrant) + 1)
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN 13 and hyphenates it.
+
+  ## Examples
+
+      iex> Exisbn.hyphenate_isbn13("978-1-86197-876-9")
+      "978-1-86197-876-9"
+      iex> Exisbn.hyphenate_isbn13("9788535902778")
+      "978-85-359-0277-8"
+      iex> Exisbn.hyphenate_isbn13("str")
+      nil
+  """
+  @spec hyphenate_isbn13(String.t()) :: nil | String.t()
+  def hyphenate_isbn13(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      Enum.join(
+        [
+          fetch_prefix(isbn),
+          fetch_registrant_element(isbn),
+          fetch_publication_element(isbn),
+          fetch_checkdigit(isbn)
+        ],
+        "-"
+      )
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN 10 and hyphenates it.
+
+  ## Examples
+
+      iex> Exisbn.hyphenate_isbn10("0306406152")
+      "0-306-40615-2"
+      iex> Exisbn.hyphenate_isbn10("str")
+      nil
+  """
+  @spec hyphenate_isbn10(String.t()) :: nil | String.t()
+  def hyphenate_isbn10(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      fullprefix = isbn |> isbn10_to_13() |> fetch_prefix()
+
+      isbn10_prefix = String.split(fullprefix, "-", trim: true) |> List.last()
+
+      Enum.join(
+        [
+          isbn10_prefix,
+          fetch_registrant_element(isbn),
+          fetch_publication_element(isbn),
+          fetch_checkdigit(isbn)
+        ],
+        "-"
+      )
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Takes an ISBN (10 or 13) and hyphenates it.
+
+  ## Examples
+
+      iex> Exisbn.hyphenate("9788535902778")
+      "978-85-359-0277-8"
+      iex> Exisbn.hyphenate("0306406152")
+      "0-306-40615-2"
+      iex> Exisbn.hyphenate("str")
+      nil
+  """
+  @spec hyphenate(String.t()) :: nil | String.t()
+  def hyphenate(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Checks if an ISBN (10 or 13) code is correctly hyphenated. If ISBN incorrect, that count as no.
+
+  ## Examples
+
+      iex> Exisbn.correctly_hyphenated?("978-85-359-0277-8")
+      true
+      iex> Exisbn.correctly_hyphenated?("97-8853590277-8")
+      false
+      iex> Exisbn.correctly_hyphenated?("0-306-40615-2")
+      true
+      iex> Exisbn.correctly_hyphenated?("03-064-06152")
+      false
+      iex> Exisbn.correctly_hyphenated?("str")
+      false
+  """
+  @spec correctly_hyphenated?(binary) :: boolean
+  def correctly_hyphenated?(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      isbn == hyphenate(isbn)
+    else
+      false
     end
   end
 
@@ -338,18 +465,26 @@ defmodule Exisbn do
     Enum.member?(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], ch)
   end
 
-  defp get_prefix(prefix, body, search_length) do
+  defp fetch_prefix(prefix, body, search_length) do
     search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
 
     if Map.has_key?(Regions.dataset(), search_prefix) do
       search_prefix
     else
-      get_prefix(prefix, body, search_length + 1)
+      fetch_prefix(prefix, body, search_length + 1)
     end
   end
 
+  defp fetch_body(isbn, prefix) do
+    isbn
+    |> drop_chars(String.length(prefix) - 1)
+    |> String.reverse()
+    |> drop_chars(1)
+    |> String.reverse()
+  end
+
   defp fetch_info(isbn) do
-    Map.get(Regions.dataset(), get_prefix(isbn))
+    Map.get(Regions.dataset(), fetch_prefix(isbn))
   end
 
   def fetch_ranges(isbn) do

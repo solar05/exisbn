@@ -11,9 +11,9 @@ by adding `exisbn` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:exisbn, "~> 0.1.0"}
+    {:exisbn, "~> 1.0.0"}
   ]
 end
 ```
 
-Documentation can be found at [HexDocs.](https://hexdocs.pm/exisbn)
+Documentation with examples can be found at [HexDocs.](https://hexdocs.pm/exisbn)

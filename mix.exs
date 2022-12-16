@@ -4,7 +4,7 @@ defmodule Exisbn.MixProject do
   def project do
     [
       app: :exisbn,
-      version: "0.1.2",
+      version: "1.0.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       description: description(),
