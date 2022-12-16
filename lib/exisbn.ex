@@ -110,8 +110,6 @@ defmodule Exisbn do
 
       iex> Exisbn.valid?("978-5-12345-678-1")
       true
-      iex> Exisbn.valid?("978-5-12345-678-1")
-      true
       iex> Exisbn.valid?("978-5-12345-678")
       false
       iex> Exisbn.valid?("85-359-0277-5")
@@ -487,7 +485,7 @@ defmodule Exisbn do
     Map.get(Regions.dataset(), fetch_prefix(isbn))
   end
 
-  def fetch_ranges(isbn) do
+  defp fetch_ranges(isbn) do
     Map.get(fetch_info(isbn), "ranges")
   end
 end
