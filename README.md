@@ -1,4 +1,6 @@
 [![CI](https://github.com/solar05/exisbn/actions/workflows/elixir.yml/badge.svg)](https://github.com/solar05/exisbn/actions/workflows/elixir.yml)
+![Hex.pm](https://img.shields.io/hexpm/v/exisbn)
+![Hex.pm](https://img.shields.io/hexpm/l/exisbn)
 # Exisbn
 
 ISBN utility library for Elixir.
