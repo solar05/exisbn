@@ -18,8 +18,10 @@ defmodule Exisbn do
       9
       iex> Exisbn.isbn10_checkdigit("0str")
       nil
+      iex> Exisbn.isbn10_checkdigit("887385107")
+      "X"
   """
-  @spec isbn10_checkdigit(String.t()) :: nil | <<_::8>> | integer
+  @spec isbn10_checkdigit(String.t()) :: nil | String.t() | integer()
   def isbn10_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
       nsum =
@@ -27,7 +29,7 @@ defmodule Exisbn do
         |> normalize()
         |> String.slice(0..8)
         |> String.split("", trim: true)
-        |> Enum.map(&to_int/1)
+        |> Enum.map(&String.to_integer/1)
         |> Enum.with_index()
         |> Enum.map(fn {val, ind} ->
           (10 - ind) * val
@@ -62,7 +64,7 @@ defmodule Exisbn do
         |> normalize()
         |> String.slice(0..11)
         |> String.split("", trim: true)
-        |> Enum.map(&to_int/1)
+        |> Enum.map(&String.to_integer/1)
         |> Enum.with_index()
         |> Enum.map(fn {val, ind} ->
           if Integer.is_odd(ind), do: val * 3, else: val
@@ -235,16 +237,18 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.fetch_checkdigit("9788535902778")
-      8
+      "8"
       iex> Exisbn.fetch_checkdigit("2-1234-5680-2")
-      2
+      "2"
       iex> Exisbn.fetch_checkdigit("str")
       nil
+      iex> Exisbn.fetch_checkdigit("887385107X")
+      "X"
   """
   @spec fetch_checkdigit(String.t()) :: String.t() | nil
   def fetch_checkdigit(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      to_int(String.last(isbn))
+      String.last(isbn)
     else
       nil
     end
@@ -275,11 +279,11 @@ defmodule Exisbn do
       body = fetch_body(prepared_isbn, prefix)
 
       Enum.reduce_while(ranges, "", fn range, _ ->
-        beg = to_int(List.first(range))
-        ending = to_int(List.last(range))
+        beg = String.to_integer(List.first(range))
+        ending = String.to_integer(List.last(range))
         length = String.length(List.last(range)) - 1
         range_part = String.slice(body, 0..length)
-        area = to_int(range_part)
+        area = String.to_integer(range_part)
 
         if beg <= area && area <= ending, do: {:halt, range_part}, else: {:cont, nil}
       end)
@@ -440,15 +444,6 @@ defmodule Exisbn do
   defp isbn10?(isbn) do
     length = isbn |> normalize() |> String.length()
     length == 10
-  end
-
-  defp to_int(char) when is_bitstring(char) do
-    {number, _} = Integer.parse(char)
-    number
-  end
-
-  defp to_int(number) when is_integer(number) do
-    number
   end
 
   defp correct?(isbn) do
