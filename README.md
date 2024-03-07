@@ -13,7 +13,7 @@ by adding `exisbn` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:exisbn, "~> 1.0"}
+    {:exisbn, "~> 2.0"}
   ]
 end
 ```
@@ -27,13 +27,13 @@ Full list of examples presented at [documentation page.](https://hexdocs.pm/exis
 Hyphens:
 ```elixir
 Exisbn.hyphenate("9788535902778")
-"978-85-359-0277-8"
+{:ok, "978-85-359-0277-8"}
 
 Exisbn.hyphenate("0306406152")
-"0-306-40615-2"
+{:ok, "0-306-40615-2"}
 
 Exisbn.hyphenate("str")
-nil
+{:error, :invalid_isbn}
 ```
 
 Validations:
@@ -50,13 +50,13 @@ true
 Exisbn.valid?("85-359-0277")
 false
 
-Exisbn.correctly_hyphenated?("978-85-359-0277-8")
+Exisbn.correct_hyphens?("978-85-359-0277-8")
 true
-Exisbn.correctly_hyphenated?("97-8853590277-8")
+Exisbn.correct_hyphens?("97-8853590277-8")
 false
-Exisbn.correctly_hyphenated?("0-306-40615-2")
+Exisbn.correct_hyphens?("0-306-40615-2")
 true
-Exisbn.correctly_hyphenated?("03-064-06152")
+Exisbn.correct_hyphens?("03-064-06152")
 false
 
 Exisbn.checkdigit_correct?("85-359-0277-5")
@@ -70,29 +70,29 @@ false
 Additional info:
 ```elixir
 Exisbn.publisher_zone("9788535902778")
-"Brazil"
+{:ok, "Brazil"}
 Exisbn.publisher_zone("2-1234-5680-2")
-"French language"
+{:ok, "French language"}
 Exisbn.publisher_zone("str")
-nil
+{:error, :invalid_isbn}
 
 Exisbn.fetch_registrant_element("9788535902778")
-"359"
+{:ok, "359"}
 Exisbn.fetch_registrant_element("978-1-86197-876-9")
-"86197"
+{:ok, "86197"}
 
 Exisbn.fetch_publication_element("978-1-86197-876-9")
-"876"
+{:ok, "876"}
 Exisbn.fetch_publication_element("9789529351787")
-"5178"
+{:ok, "5178"}
 
 Exisbn.fetch_prefix("9788535902778")
-"978-85"
+{:ok, "978-85"}
 Exisbn.fetch_prefix("2-1234-5680-2")
-"978-2"
+{:ok, "978-2"}
 
 Exisbn.fetch_checkdigit("9788535902778")
-8
+{:ok, 8}
 Exisbn.fetch_checkdigit("2-1234-5680-2")
-2
+{:ok, 2}
 ```

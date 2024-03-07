@@ -13,15 +13,15 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.isbn10_checkdigit("85-359-0277")
-      5
+      {:ok, "5"}
       iex> Exisbn.isbn10_checkdigit("5-02-013850")
-      9
+      {:ok, "9"}
       iex> Exisbn.isbn10_checkdigit("0str")
-      nil
+      {:error, :invalid_isbn}
       iex> Exisbn.isbn10_checkdigit("887385107")
-      "X"
+      {:ok, "X"}
   """
-  @spec isbn10_checkdigit(String.t()) :: nil | String.t() | integer()
+  @spec isbn10_checkdigit(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn10_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
       nsum =
@@ -38,9 +38,10 @@ defmodule Exisbn do
 
       digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
 
-      if digit == 10, do: "X", else: digit
+      result = if digit == 10, do: "X", else: to_string(digit)
+      {:ok, result}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -50,13 +51,13 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.isbn13_checkdigit("978-5-12345-678")
-      1
+      {:ok, "1"}
       iex> Exisbn.isbn13_checkdigit("978-0-306-40615")
-      7
+      {:ok, "7"}
       iex> Exisbn.isbn13_checkdigit("0str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec isbn13_checkdigit(binary) :: nil | integer
+  @spec isbn13_checkdigit(binary) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn13_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 11..13 do
       nsum =
@@ -73,9 +74,10 @@ defmodule Exisbn do
 
       digit = 10 - Integer.mod(nsum, 10)
 
-      if digit == 10, do: 0, else: digit
+      result = if digit == 10, do: 0, else: digit
+      {:ok, to_string(result)}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -95,14 +97,17 @@ defmodule Exisbn do
   def checkdigit_correct?(isbn) when is_bitstring(isbn) do
     normalized = normalize(isbn)
 
-    digit =
+    result =
       if String.length(normalized) == 10 do
         isbn10_checkdigit(normalized)
       else
         isbn13_checkdigit(normalized)
       end
 
-    to_string(digit) == String.last(normalized)
+    case result do
+      {:ok, digit} -> digit == String.last(normalized)
+      {:error, _} -> false
+    end
   end
 
   @doc """
@@ -134,23 +139,24 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.isbn10_to_13("85-359-0277-5")
-      "9788535902778"
+      {:ok, "9788535902778"}
       iex> Exisbn.valid?("9788535902778")
       true
       iex> Exisbn.isbn10_to_13("0306406152")
-      "9780306406157"
+      {:ok, "9780306406157"}
       iex> Exisbn.valid?("9780306406157")
       true
       iex> Exisbn.isbn10_to_13("0-19-853453123")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec isbn10_to_13(String.t()) :: String.t() | nil
+  @spec isbn10_to_13(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn10_to_13(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       first_chars = "978#{String.slice(normalize(isbn), 0..8)}"
-      "#{first_chars}#{isbn13_checkdigit(first_chars)}"
+      {:ok, checkdigit} = isbn13_checkdigit(first_chars)
+      {:ok, "#{first_chars}#{checkdigit}"}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -160,17 +166,17 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.isbn13_to_10("9788535902778")
-      "8535902775"
+      {:ok, "8535902775"}
       iex> Exisbn.valid?("8535902775")
       true
       iex> Exisbn.isbn13_to_10("9780306406157")
-      "0306406152"
+      {:ok, "0306406152"}
       iex> Exisbn.valid?("0306406152")
       true
       iex> Exisbn.isbn13_to_10("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec isbn13_to_10(String.t()) :: String.t() | nil
+  @spec isbn13_to_10(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn13_to_10(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       first_chars =
@@ -179,9 +185,10 @@ defmodule Exisbn do
         |> drop_chars(3)
         |> String.slice(0..8)
 
-      "#{first_chars}#{isbn10_checkdigit(first_chars)}"
+      {:ok, checkdigit} = isbn10_checkdigit(first_chars)
+      {:ok, "#{first_chars}#{checkdigit}"}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -191,20 +198,26 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.publisher_zone("9788535902778")
-      "Brazil"
+      {:ok, "Brazil"}
       iex> Exisbn.publisher_zone("2-1234-5680-2")
-      "French language"
+      {:ok, "French language"}
       iex> Exisbn.publisher_zone("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec publisher_zone(String.t()) :: String.t() | nil
+  @spec publisher_zone(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def publisher_zone(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, converted} = isbn10_to_13(isbn)
+          converted
+        else
+          normalize(isbn)
+        end
 
-      Map.get(fetch_info(prepared_isbn), "name")
+      {:ok, Map.get(fetch_info(prepared_isbn), "name")}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -214,20 +227,26 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.fetch_prefix("9788535902778")
-      "978-85"
+      {:ok, "978-85"}
       iex> Exisbn.fetch_prefix("2-1234-5680-2")
-      "978-2"
+      {:ok, "978-2"}
       iex> Exisbn.fetch_prefix("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec fetch_prefix(String.t()) :: String.t() | nil
+  @spec fetch_prefix(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_prefix(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, result} = isbn10_to_13(isbn)
+          result
+        else
+          normalize(isbn)
+        end
 
-      fetch_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)
+      {:ok, fetch_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -237,20 +256,20 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.fetch_checkdigit("9788535902778")
-      "8"
+      {:ok, "8"}
       iex> Exisbn.fetch_checkdigit("2-1234-5680-2")
-      "2"
+      {:ok, "2"}
       iex> Exisbn.fetch_checkdigit("str")
-      nil
+      {:error, :invalid_isbn}
       iex> Exisbn.fetch_checkdigit("887385107X")
-      "X"
+      {:ok, "X"}
   """
-  @spec fetch_checkdigit(String.t()) :: String.t() | nil
+  @spec fetch_checkdigit(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_checkdigit(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      String.last(isbn)
+      {:ok, String.last(isbn)}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -260,20 +279,26 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.fetch_registrant_element("9788535902778")
-      "359"
+      {:ok, "359"}
       iex> Exisbn.fetch_registrant_element("978-1-86197-876-9")
-      "86197"
+      {:ok, "86197"}
       iex> Exisbn.fetch_registrant_element("9789529351787")
-      "93"
+      {:ok, "93"}
       iex> Exisbn.fetch_registrant_element("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec fetch_registrant_element(String.t()) :: nil | String.t()
+  @spec fetch_registrant_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_registrant_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, translated} = isbn10_to_13(isbn)
+          translated
+        else
+          normalize(isbn)
+        end
 
-      prefix = fetch_prefix(prepared_isbn)
+      {:ok, prefix} = fetch_prefix(prepared_isbn)
       ranges = fetch_ranges(prepared_isbn)
 
       body = fetch_body(prepared_isbn, prefix)
@@ -285,10 +310,12 @@ defmodule Exisbn do
         range_part = String.slice(body, 0..length)
         area = String.to_integer(range_part)
 
-        if beg <= area && area <= ending, do: {:halt, range_part}, else: {:cont, nil}
+        if beg <= area && area <= ending,
+          do: {:halt, {:ok, range_part}},
+          else: {:cont, {:error, :invalid_isbn}}
       end)
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -298,83 +325,31 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.fetch_publication_element("978-1-86197-876-9")
-      "876"
+      {:ok, "876"}
       iex> Exisbn.fetch_publication_element("9789529351787")
-      "5178"
+      {:ok, "5178"}
       iex> Exisbn.fetch_publication_element("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec fetch_publication_element(String.t()) :: nil | String.t()
+  @spec fetch_publication_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_publication_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn = if isbn10?(isbn), do: isbn10_to_13(isbn), else: normalize(isbn)
-      prefix = fetch_prefix(prepared_isbn) |> normalize()
-      body = fetch_body(prepared_isbn, prefix)
-      registrant = fetch_registrant_element(prepared_isbn)
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, converted} = isbn10_to_13(isbn)
+          converted
+        else
+          normalize(isbn)
+        end
 
-      drop_chars(body, String.length(registrant) + 1)
+      {:ok, prefix} = fetch_prefix(prepared_isbn)
+      normalized_prefix = normalize(prefix)
+      body = fetch_body(prepared_isbn, normalized_prefix)
+      {:ok, registrant} = fetch_registrant_element(prepared_isbn)
+
+      {:ok, drop_chars(body, String.length(registrant) + 1)}
     else
-      nil
-    end
-  end
-
-  @doc """
-  Takes an ISBN 13 and hyphenates it.
-
-  ## Examples
-
-      iex> Exisbn.hyphenate_isbn13("978-1-86197-876-9")
-      "978-1-86197-876-9"
-      iex> Exisbn.hyphenate_isbn13("9788535902778")
-      "978-85-359-0277-8"
-      iex> Exisbn.hyphenate_isbn13("str")
-      nil
-  """
-  @spec hyphenate_isbn13(String.t()) :: nil | String.t()
-  def hyphenate_isbn13(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      Enum.join(
-        [
-          fetch_prefix(isbn),
-          fetch_registrant_element(isbn),
-          fetch_publication_element(isbn),
-          fetch_checkdigit(isbn)
-        ],
-        "-"
-      )
-    else
-      nil
-    end
-  end
-
-  @doc """
-  Takes an ISBN 10 and hyphenates it.
-
-  ## Examples
-
-      iex> Exisbn.hyphenate_isbn10("0306406152")
-      "0-306-40615-2"
-      iex> Exisbn.hyphenate_isbn10("str")
-      nil
-  """
-  @spec hyphenate_isbn10(String.t()) :: nil | String.t()
-  def hyphenate_isbn10(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      fullprefix = isbn |> isbn10_to_13() |> fetch_prefix()
-
-      isbn10_prefix = String.split(fullprefix, "-", trim: true) |> List.last()
-
-      Enum.join(
-        [
-          isbn10_prefix,
-          fetch_registrant_element(isbn),
-          fetch_publication_element(isbn),
-          fetch_checkdigit(isbn)
-        ],
-        "-"
-      )
-    else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -384,18 +359,19 @@ defmodule Exisbn do
   ## Examples
 
       iex> Exisbn.hyphenate("9788535902778")
-      "978-85-359-0277-8"
+      {:ok, "978-85-359-0277-8"}
       iex> Exisbn.hyphenate("0306406152")
-      "0-306-40615-2"
+      {:ok, "0-306-40615-2"}
       iex> Exisbn.hyphenate("str")
-      nil
+      {:error, :invalid_isbn}
   """
-  @spec hyphenate(String.t()) :: nil | String.t()
+  @spec hyphenate(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def hyphenate(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
+      result = if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
+      {:ok, result}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -404,21 +380,24 @@ defmodule Exisbn do
 
   ## Examples
 
-      iex> Exisbn.correctly_hyphenated?("978-85-359-0277-8")
+      iex> Exisbn.correct_hyphens?("978-85-359-0277-8")
       true
-      iex> Exisbn.correctly_hyphenated?("97-8853590277-8")
+      iex> Exisbn.correct_hyphens?("97-8853590277-8")
       false
-      iex> Exisbn.correctly_hyphenated?("0-306-40615-2")
+      iex> Exisbn.correct_hyphens?("0-306-40615-2")
       true
-      iex> Exisbn.correctly_hyphenated?("03-064-06152")
+      iex> Exisbn.correct_hyphens?("03-064-06152")
       false
-      iex> Exisbn.correctly_hyphenated?("str")
+      iex> Exisbn.correct_hyphens?("str")
       false
   """
-  @spec correctly_hyphenated?(binary) :: boolean
-  def correctly_hyphenated?(isbn) when is_bitstring(isbn) do
+  @spec correct_hyphens?(binary) :: boolean
+  def correct_hyphens?(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      isbn == hyphenate(isbn)
+      case hyphenate(isbn) do
+        {:ok, hyphenated} -> isbn == hyphenated
+        {:error, _} -> false
+      end
     else
       false
     end
@@ -432,7 +411,9 @@ defmodule Exisbn do
   end
 
   defp correct_length?(isbn) do
-    Enum.member?([10, 13, 17], String.length(isbn))
+    size = String.length(isbn)
+
+    size == 10 || size == 13 || size == 17
   end
 
   defp without_incorrect_chars?(isbn) do
@@ -455,7 +436,7 @@ defmodule Exisbn do
   end
 
   defp is_digit(ch) do
-    Enum.member?(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], ch)
+    String.contains?("0123456789", ch)
   end
 
   defp fetch_prefix(prefix, body, search_length) do
@@ -477,10 +458,56 @@ defmodule Exisbn do
   end
 
   defp fetch_info(isbn) do
-    Map.get(Regions.dataset(), fetch_prefix(isbn))
+    {:ok, prefix} = fetch_prefix(isbn)
+    Map.get(Regions.dataset(), prefix)
   end
 
   defp fetch_ranges(isbn) do
     Map.get(fetch_info(isbn), "ranges")
+  end
+
+  defp hyphenate_isbn13(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      {:ok, prefix} = fetch_prefix(isbn)
+      {:ok, registrant_element} = fetch_registrant_element(isbn)
+      {:ok, publication_element} = fetch_publication_element(isbn)
+      {:ok, checkdigit} = fetch_checkdigit(isbn)
+
+      Enum.join(
+        [
+          prefix,
+          registrant_element,
+          publication_element,
+          checkdigit
+        ],
+        "-"
+      )
+    else
+      nil
+    end
+  end
+
+  defp hyphenate_isbn10(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      {:ok, converted} = isbn10_to_13(isbn)
+      {:ok, full_prefix} = fetch_prefix(converted)
+      {:ok, registrant_element} = fetch_registrant_element(isbn)
+      {:ok, publication_element} = fetch_publication_element(isbn)
+      {:ok, checkdigit} = fetch_checkdigit(isbn)
+
+      isbn10_prefix = String.split(full_prefix, "-", trim: true) |> List.last()
+
+      Enum.join(
+        [
+          isbn10_prefix,
+          registrant_element,
+          publication_element,
+          checkdigit
+        ],
+        "-"
+      )
+    else
+      nil
+    end
   end
 end

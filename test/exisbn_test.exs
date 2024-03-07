@@ -3,6 +3,6 @@ defmodule ExisbnTest do
   doctest Exisbn
 
   test "isbn10_checkdigit test" do
-    assert Exisbn.isbn10_checkdigit("85-359-0277") == 5
+    assert Exisbn.isbn10_checkdigit("85-359-0277") == {:ok, "5"}
   end
 end
