@@ -46,6 +46,43 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `isbn10_checkdigit/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.isbn10_checkdigit!("85-359-0277")
+      "5"
+      iex> Exisbn.isbn10_checkdigit!("5-02-013850")
+      "9"
+      iex> Exisbn.isbn10_checkdigit!("0str")
+      ** (ArgumentError) Invalid ISBN
+      iex> Exisbn.isbn10_checkdigit!("887385107")
+      "X"
+  """
+  @spec isbn10_checkdigit!(String.t()) :: String.t()
+  def isbn10_checkdigit!(isbn) when is_bitstring(isbn) do
+    if String.length(normalize(isbn)) in 8..10 do
+      nsum =
+        isbn
+        |> normalize()
+        |> String.slice(0..8)
+        |> String.split("", trim: true)
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.with_index()
+        |> Enum.map(fn {val, ind} ->
+          (10 - ind) * val
+        end)
+        |> Enum.reduce(&+/2)
+
+      digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
+
+      if digit == 10, do: "X", else: to_string(digit)
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN 13 code as string, returns its check digit.
 
   ## Examples
@@ -78,6 +115,42 @@ defmodule Exisbn do
       {:ok, to_string(result)}
     else
       {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `isbn13_checkdigit/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.isbn13_checkdigit!("978-5-12345-678")
+      "1"
+      iex> Exisbn.isbn13_checkdigit!("978-0-306-40615")
+      "7"
+      iex> Exisbn.isbn13_checkdigit!("0str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec isbn13_checkdigit!(binary) :: String.t()
+  def isbn13_checkdigit!(isbn) when is_bitstring(isbn) do
+    if String.length(normalize(isbn)) in 11..13 do
+      nsum =
+        isbn
+        |> normalize()
+        |> String.slice(0..11)
+        |> String.split("", trim: true)
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.with_index()
+        |> Enum.map(fn {val, ind} ->
+          if Integer.is_odd(ind), do: val * 3, else: val
+        end)
+        |> Enum.reduce(&+/2)
+
+      digit = 10 - Integer.mod(nsum, 10)
+
+      result = if digit == 10, do: 0, else: digit
+      to_string(result)
+    else
+      raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -161,6 +234,33 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `isbn10_to_13/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.isbn10_to_13!("85-359-0277-5")
+      "9788535902778"
+      iex> Exisbn.valid?("9788535902778")
+      true
+      iex> Exisbn.isbn10_to_13!("0306406152")
+      "9780306406157"
+      iex> Exisbn.valid?("9780306406157")
+      true
+      iex> Exisbn.isbn10_to_13!("0-19-853453123")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec isbn10_to_13!(String.t()) :: String.t()
+  def isbn10_to_13!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      first_chars = "978#{String.slice(normalize(isbn), 0..8)}"
+      {:ok, checkdigit} = isbn13_checkdigit(first_chars)
+      "#{first_chars}#{checkdigit}"
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN 13 and converts it to ISBN 10.
 
   ## Examples
@@ -193,6 +293,38 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `isbn13_to_10/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.isbn13_to_10!("9788535902778")
+      "8535902775"
+      iex> Exisbn.valid?("8535902775")
+      true
+      iex> Exisbn.isbn13_to_10!("9780306406157")
+      "0306406152"
+      iex> Exisbn.valid?("0306406152")
+      true
+      iex> Exisbn.isbn13_to_10!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec isbn13_to_10!(String.t()) :: String.t()
+  def isbn13_to_10!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      first_chars =
+        isbn
+        |> normalize()
+        |> drop_chars(3)
+        |> String.slice(0..8)
+
+      {:ok, checkdigit} = isbn10_checkdigit(first_chars)
+      "#{first_chars}#{checkdigit}"
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN and returns its publisher zone.
 
   ## Examples
@@ -218,6 +350,35 @@ defmodule Exisbn do
       {:ok, Map.get(fetch_info(prepared_isbn), "name")}
     else
       {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `publisher_zone/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.publisher_zone!("9788535902778")
+      "Brazil"
+      iex> Exisbn.publisher_zone!("2-1234-5680-2")
+      "French language"
+      iex> Exisbn.publisher_zone!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec publisher_zone!(String.t()) :: String.t()
+  def publisher_zone!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, converted} = isbn10_to_13(isbn)
+          converted
+        else
+          normalize(isbn)
+        end
+
+      Map.get(fetch_info(prepared_isbn), "name")
+    else
+      raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -274,6 +435,29 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `fetch_checkdigit/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.fetch_checkdigit!("9788535902778")
+      "8"
+      iex> Exisbn.fetch_checkdigit!("2-1234-5680-2")
+      "2"
+      iex> Exisbn.fetch_checkdigit!("str")
+      ** (ArgumentError) Invalid ISBN
+      iex> Exisbn.fetch_checkdigit!("887385107X")
+      "X"
+  """
+  @spec fetch_checkdigit!(String.t()) :: String.t()
+  def fetch_checkdigit!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      String.last(isbn)
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN and returns its registrant element.
 
   ## Examples
@@ -320,6 +504,52 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `fetch_registrant_element/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.fetch_registrant_element!("9788535902778")
+      "359"
+      iex> Exisbn.fetch_registrant_element!("978-1-86197-876-9")
+      "86197"
+      iex> Exisbn.fetch_registrant_element!("9789529351787")
+      "93"
+      iex> Exisbn.fetch_registrant_element!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec fetch_registrant_element!(String.t()) :: String.t()
+  def fetch_registrant_element!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, translated} = isbn10_to_13(isbn)
+          translated
+        else
+          normalize(isbn)
+        end
+
+      {:ok, prefix} = fetch_prefix(prepared_isbn)
+      ranges = fetch_ranges(prepared_isbn)
+
+      body = fetch_body(prepared_isbn, prefix)
+
+      Enum.reduce_while(ranges, "", fn range, _ ->
+        beg = String.to_integer(List.first(range))
+        ending = String.to_integer(List.last(range))
+        length = String.length(List.last(range)) - 1
+        range_part = String.slice(body, 0..length)
+        area = String.to_integer(range_part)
+
+        if beg <= area && area <= ending,
+          do: {:halt, range_part},
+          else: {:cont, {:error, :invalid_isbn}}
+      end)
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN and returns its publication element.
 
   ## Examples
@@ -354,6 +584,40 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `fetch_publication_element/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.fetch_publication_element!("978-1-86197-876-9")
+      "876"
+      iex> Exisbn.fetch_publication_element!("9789529351787")
+      "5178"
+      iex> Exisbn.fetch_publication_element!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec fetch_publication_element!(String.t()) :: String.t()
+  def fetch_publication_element!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn =
+        if isbn10?(isbn) do
+          {:ok, converted} = isbn10_to_13(isbn)
+          converted
+        else
+          normalize(isbn)
+        end
+
+      {:ok, prefix} = fetch_prefix(prepared_isbn)
+      normalized_prefix = normalize(prefix)
+      body = fetch_body(prepared_isbn, normalized_prefix)
+      {:ok, registrant} = fetch_registrant_element(prepared_isbn)
+
+      drop_chars(body, String.length(registrant) + 1)
+    else
+      raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN (10 or 13) and hyphenates it.
 
   ## Examples
@@ -372,6 +636,27 @@ defmodule Exisbn do
       {:ok, result}
     else
       {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `hyphenate/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.hyphenate!("9788535902778")
+      "978-85-359-0277-8"
+      iex> Exisbn.hyphenate!("0306406152")
+      "0-306-40615-2"
+      iex> Exisbn.hyphenate!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec hyphenate!(String.t()) :: String.t()
+  def hyphenate!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
+    else
+      raise(ArgumentError, "Invalid ISBN")
     end
   end
 
