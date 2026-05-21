@@ -92,7 +92,7 @@ Exisbn.fetch_prefix("2-1234-5680-2")
 {:ok, "978-2"}
 
 Exisbn.fetch_checkdigit("9788535902778")
-{:ok, 8}
+{:ok, "8"}
 Exisbn.fetch_checkdigit("2-1234-5680-2")
-{:ok, 2}
+{:ok, "2"}
 ```

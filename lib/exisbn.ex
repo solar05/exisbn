@@ -24,22 +24,10 @@ defmodule Exisbn do
   @spec isbn10_checkdigit(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn10_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
-      nsum =
-        isbn
-        |> normalize()
-        |> String.slice(0..8)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          (10 - ind) * val
-        end)
-        |> Enum.reduce(&+/2)
-
-      digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
-
-      result = if digit == 10, do: "X", else: to_string(digit)
-      {:ok, result}
+      case calculate_isbn10_checkdigit(isbn) do
+        {:ok, digit} -> {:ok, digit}
+        {:error, _} -> {:error, :invalid_isbn}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -62,21 +50,10 @@ defmodule Exisbn do
   @spec isbn10_checkdigit!(String.t()) :: String.t()
   def isbn10_checkdigit!(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 8..10 do
-      nsum =
-        isbn
-        |> normalize()
-        |> String.slice(0..8)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          (10 - ind) * val
-        end)
-        |> Enum.reduce(&+/2)
-
-      digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
-
-      if digit == 10, do: "X", else: to_string(digit)
+      case calculate_isbn10_checkdigit(isbn) do
+        {:ok, digit} -> digit
+        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
+      end
     else
       raise(ArgumentError, "Invalid ISBN")
     end
@@ -97,22 +74,10 @@ defmodule Exisbn do
   @spec isbn13_checkdigit(binary) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def isbn13_checkdigit(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 11..13 do
-      nsum =
-        isbn
-        |> normalize()
-        |> String.slice(0..11)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          if Integer.is_odd(ind), do: val * 3, else: val
-        end)
-        |> Enum.reduce(&+/2)
-
-      digit = 10 - Integer.mod(nsum, 10)
-
-      result = if digit == 10, do: 0, else: digit
-      {:ok, to_string(result)}
+      case calculate_isbn13_checkdigit(isbn) do
+        {:ok, digit} -> {:ok, digit}
+        {:error, _} -> {:error, :invalid_isbn}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -133,22 +98,10 @@ defmodule Exisbn do
   @spec isbn13_checkdigit!(binary) :: String.t()
   def isbn13_checkdigit!(isbn) when is_bitstring(isbn) do
     if String.length(normalize(isbn)) in 11..13 do
-      nsum =
-        isbn
-        |> normalize()
-        |> String.slice(0..11)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          if Integer.is_odd(ind), do: val * 3, else: val
-        end)
-        |> Enum.reduce(&+/2)
-
-      digit = 10 - Integer.mod(nsum, 10)
-
-      result = if digit == 10, do: 0, else: digit
-      to_string(result)
+      case calculate_isbn13_checkdigit(isbn) do
+        {:ok, digit} -> digit
+        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
+      end
     else
       raise(ArgumentError, "Invalid ISBN")
     end
@@ -339,14 +292,7 @@ defmodule Exisbn do
   @spec publisher_zone(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def publisher_zone(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, converted} = isbn10_to_13(isbn)
-          converted
-        else
-          normalize(isbn)
-        end
-
+      prepared_isbn = prepare_isbn_13(isbn)
       {:ok, Map.get(fetch_info(prepared_isbn), "name")}
     else
       {:error, :invalid_isbn}
@@ -368,14 +314,7 @@ defmodule Exisbn do
   @spec publisher_zone!(String.t()) :: String.t()
   def publisher_zone!(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, converted} = isbn10_to_13(isbn)
-          converted
-        else
-          normalize(isbn)
-        end
-
+      prepared_isbn = prepare_isbn_13(isbn)
       Map.get(fetch_info(prepared_isbn), "name")
     else
       raise(ArgumentError, "Invalid ISBN")
@@ -397,15 +336,10 @@ defmodule Exisbn do
   @spec fetch_prefix(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_prefix(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, result} = isbn10_to_13(isbn)
-          result
-        else
-          normalize(isbn)
-        end
+      prepared_isbn = prepare_isbn_13(isbn)
 
-      {:ok, fetch_prefix(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)}
+      {:ok,
+       search_prefix_range(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)}
     else
       {:error, :invalid_isbn}
     end
@@ -474,13 +408,7 @@ defmodule Exisbn do
   @spec fetch_registrant_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_registrant_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, translated} = isbn10_to_13(isbn)
-          translated
-        else
-          normalize(isbn)
-        end
+      prepared_isbn = prepare_isbn_13(isbn)
 
       {:ok, prefix} = fetch_prefix(prepared_isbn)
       ranges = fetch_ranges(prepared_isbn)
@@ -520,13 +448,7 @@ defmodule Exisbn do
   @spec fetch_registrant_element!(String.t()) :: String.t()
   def fetch_registrant_element!(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, translated} = isbn10_to_13(isbn)
-          translated
-        else
-          normalize(isbn)
-        end
+      prepared_isbn = prepare_isbn_13(isbn)
 
       {:ok, prefix} = fetch_prefix(prepared_isbn)
       ranges = fetch_ranges(prepared_isbn)
@@ -564,13 +486,7 @@ defmodule Exisbn do
   @spec fetch_publication_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_publication_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, converted} = isbn10_to_13(isbn)
-          converted
-        else
-          normalize(isbn)
-        end
+      prepared_isbn = prepare_isbn_13(isbn)
 
       {:ok, prefix} = fetch_prefix(prepared_isbn)
       normalized_prefix = normalize(prefix)
@@ -598,13 +514,7 @@ defmodule Exisbn do
   @spec fetch_publication_element!(String.t()) :: String.t()
   def fetch_publication_element!(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      prepared_isbn =
-        if isbn10?(isbn) do
-          {:ok, converted} = isbn10_to_13(isbn)
-          converted
-        else
-          normalize(isbn)
-        end
+      prepared_isbn = prepare_isbn_13(isbn)
 
       {:ok, prefix} = fetch_prefix(prepared_isbn)
       normalized_prefix = normalize(prefix)
@@ -632,8 +542,7 @@ defmodule Exisbn do
   @spec hyphenate(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def hyphenate(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      result = if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
-      {:ok, result}
+      if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
     else
       {:error, :invalid_isbn}
     end
@@ -654,7 +563,10 @@ defmodule Exisbn do
   @spec hyphenate!(String.t()) :: String.t()
   def hyphenate!(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
+      case if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn) do
+        {:ok, result} -> result
+        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
+      end
     else
       raise(ArgumentError, "Invalid ISBN")
     end
@@ -685,6 +597,63 @@ defmodule Exisbn do
       end
     else
       false
+    end
+  end
+
+  defp calculate_isbn10_checkdigit(isbn) do
+    normalized = normalize(isbn)
+
+    if String.length(normalized) in 8..10 do
+      nsum =
+        normalized
+        |> String.slice(0..8)
+        |> String.split("", trim: true)
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.with_index()
+        |> Enum.map(fn {val, ind} ->
+          (10 - ind) * val
+        end)
+        |> Enum.reduce(&+/2)
+
+      digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
+      result = if digit == 10, do: "X", else: to_string(digit)
+      {:ok, result}
+    else
+      {:error, :invalid_isbn}
+    end
+  end
+
+  defp calculate_isbn13_checkdigit(isbn) do
+    normalized = normalize(isbn)
+
+    if String.length(normalized) in 11..13 do
+      nsum =
+        normalized
+        |> String.slice(0..11)
+        |> String.split("", trim: true)
+        |> Enum.map(&String.to_integer/1)
+        |> Enum.with_index()
+        |> Enum.map(fn {val, ind} ->
+          if Integer.is_odd(ind), do: val * 3, else: val
+        end)
+        |> Enum.reduce(&+/2)
+
+      digit = 10 - Integer.mod(nsum, 10)
+      result = if digit == 10, do: 0, else: digit
+      {:ok, to_string(result)}
+    else
+      {:error, :invalid_isbn}
+    end
+  end
+
+  defp prepare_isbn_13(isbn) do
+    if isbn10?(isbn) do
+      case isbn10_to_13(isbn) do
+        {:ok, converted} -> converted
+        {:error, _} -> nil
+      end
+    else
+      normalize(isbn)
     end
   end
 
@@ -724,13 +693,21 @@ defmodule Exisbn do
     String.contains?("0123456789", ch)
   end
 
-  defp fetch_prefix(prefix, body, search_length) do
-    search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
+  defp search_prefix_range(prefix, body, search_length) do
+    # Prevent infinite recursion by limiting search depth
+    max_search_length = String.length(body)
 
-    if Map.has_key?(Regions.dataset(), search_prefix) do
-      search_prefix
+    if search_length > max_search_length do
+      # Fallback: return the longest possible prefix found
+      prefix
     else
-      fetch_prefix(prefix, body, search_length + 1)
+      search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
+
+      if Map.has_key?(Regions.dataset(), search_prefix) do
+        search_prefix
+      else
+        search_prefix_range(prefix, body, search_length + 1)
+      end
     end
   end
 
@@ -758,17 +735,18 @@ defmodule Exisbn do
       {:ok, publication_element} = fetch_publication_element(isbn)
       {:ok, checkdigit} = fetch_checkdigit(isbn)
 
-      Enum.join(
-        [
-          prefix,
-          registrant_element,
-          publication_element,
-          checkdigit
-        ],
-        "-"
-      )
+      {:ok,
+       Enum.join(
+         [
+           prefix,
+           registrant_element,
+           publication_element,
+           checkdigit
+         ],
+         "-"
+       )}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 
@@ -782,17 +760,18 @@ defmodule Exisbn do
 
       isbn10_prefix = String.split(full_prefix, "-", trim: true) |> List.last()
 
-      Enum.join(
-        [
-          isbn10_prefix,
-          registrant_element,
-          publication_element,
-          checkdigit
-        ],
-        "-"
-      )
+      {:ok,
+       Enum.join(
+         [
+           isbn10_prefix,
+           registrant_element,
+           publication_element,
+           checkdigit
+         ],
+         "-"
+       )}
     else
-      nil
+      {:error, :invalid_isbn}
     end
   end
 end
