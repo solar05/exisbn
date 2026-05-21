@@ -1,14 +1,23 @@
 [![CI](https://github.com/solar05/exisbn/actions/workflows/elixir.yml/badge.svg)](https://github.com/solar05/exisbn/actions/workflows/elixir.yml)
 ![Hex.pm](https://img.shields.io/hexpm/v/exisbn)
 ![Hex.pm](https://img.shields.io/hexpm/l/exisbn)
+
 # Exisbn
 
-ISBN utility library for Elixir.
+A lightweight Elixir library for working with ISBN (International Standard Book Number) identifiers. Supports ISBN-10 and ISBN-13 validation, conversion, and metadata extraction.
+
+## Features
+
+- **Validation** — Check if an ISBN-10 or ISBN-13 is valid
+- **Conversion** — Convert between ISBN-10 and ISBN-13 formats
+- **Hyphenation** — Format ISBNs with correct hyphens
+- **Check Digits** — Calculate and verify ISBN check digits
+- **Metadata** — Extract publisher zones, registrant elements, and publication elements
+- **Flexible Input** — Accepts ISBNs with or without hyphens
 
 ## Installation
 
-The package [available in Hex](https://hex.pm/packages/exisbn) and can be installed
-by adding `exisbn` to your list of dependencies in `mix.exs`:
+Add `exisbn` to your dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -18,81 +27,342 @@ def deps do
 end
 ```
 
-Documentation with examples can be found at [HexDocs.](https://hexdocs.pm/exisbn/Exisbn.html)
+Then run `mix deps.get` to fetch the dependency.
 
-### Usage
+## Quick Start
 
-Full list of examples presented at [documentation page.](https://hexdocs.pm/exisbn/Exisbn.html)
-
-Hyphens:
 ```elixir
+# Validate an ISBN
+Exisbn.valid?("978-85-359-0277-8")
+# => true
+
+# Convert ISBN-10 to ISBN-13
+Exisbn.isbn10_to_13("85-359-0277-5")
+# => {:ok, "9788535902778"}
+
+# Hyphenate an ISBN
 Exisbn.hyphenate("9788535902778")
-{:ok, "978-85-359-0277-8"}
+# => {:ok, "978-85-359-0277-8"}
 
-Exisbn.hyphenate("0306406152")
-{:ok, "0-306-40615-2"}
-
-Exisbn.hyphenate("str")
-{:error, :invalid_isbn}
-```
-
-Validations:
-```elixir
-Exisbn.valid?("978-5-12345-678-1")
-true
-
-Exisbn.valid?("978-5-12345-678")
-false
-
-Exisbn.valid?("85-359-0277-5")
-true
-
-Exisbn.valid?("85-359-0277")
-false
-
-Exisbn.correct_hyphens?("978-85-359-0277-8")
-true
-Exisbn.correct_hyphens?("97-8853590277-8")
-false
-Exisbn.correct_hyphens?("0-306-40615-2")
-true
-Exisbn.correct_hyphens?("03-064-06152")
-false
-
-Exisbn.checkdigit_correct?("85-359-0277-5")
-true
-Exisbn.checkdigit_correct?("978-5-12345-678-1")
-true
-Exisbn.checkdigit_correct?("978-5-12345-678")
-false
-```
-
-Additional info:
-```elixir
+# Get the publisher zone
 Exisbn.publisher_zone("9788535902778")
-{:ok, "Brazil"}
-Exisbn.publisher_zone("2-1234-5680-2")
-{:ok, "French language"}
-Exisbn.publisher_zone("str")
-{:error, :invalid_isbn}
-
-Exisbn.fetch_registrant_element("9788535902778")
-{:ok, "359"}
-Exisbn.fetch_registrant_element("978-1-86197-876-9")
-{:ok, "86197"}
-
-Exisbn.fetch_publication_element("978-1-86197-876-9")
-{:ok, "876"}
-Exisbn.fetch_publication_element("9789529351787")
-{:ok, "5178"}
-
-Exisbn.fetch_prefix("9788535902778")
-{:ok, "978-85"}
-Exisbn.fetch_prefix("2-1234-5680-2")
-{:ok, "978-2"}
-
-Exisbn.fetch_checkdigit("9788535902778")
-{:ok, "8"}
-Exisbn.fetch_checkdigit("2-1234-5680-2")
-{:ok, "2"}
+# => {:ok, "Brazil"}
 ```
+
+### Validation Functions
+
+#### `valid?(isbn)` — Validate ISBN
+
+Returns `true` if the ISBN is valid (correct format, length, and check digit), `false` otherwise.
+
+```elixir
+# Valid ISBNs
+Exisbn.valid?("978-5-12345-678-1")    # => true
+Exisbn.valid?("85-359-0277-5")        # => true
+Exisbn.valid?("9788535902778")        # => true
+
+# Invalid ISBNs
+Exisbn.valid?("978-5-12345-678")      # => false (invalid check digit)
+Exisbn.valid?("85-359-0277")          # => false (incomplete)
+Exisbn.valid?("invalid")              # => false
+```
+
+#### `checkdigit_correct?(isbn)` — Verify check digit only
+
+Returns `true` if the ISBN's check digit is correct, `false` otherwise. Does not validate format or length comprehensively.
+
+```elixir
+Exisbn.checkdigit_correct?("85-359-0277-5")      # => true
+Exisbn.checkdigit_correct?("978-5-12345-678-1")  # => true
+Exisbn.checkdigit_correct?("978-5-12345-678")    # => false
+```
+
+#### `correct_hyphens?(isbn)` — Check formatting
+
+Returns `true` if the ISBN is valid and has correct hyphenation, `false` otherwise.
+
+```elixir
+Exisbn.correct_hyphens?("978-85-359-0277-8")     # => true
+Exisbn.correct_hyphens?("97-8853590277-8")       # => false (incorrect hyphens)
+Exisbn.correct_hyphens?("0-306-40615-2")         # => true
+Exisbn.correct_hyphens?("03-064-06152")          # => false
+```
+
+### Check Digit Functions
+
+#### `isbn10_checkdigit(isbn)` / `isbn10_checkdigit!(isbn)` — Calculate ISBN-10 check digit
+
+Returns the check digit for an ISBN-10. The check digit may be a digit or `X` (representing 10).
+
+```elixir
+# Standard form
+Exisbn.isbn10_checkdigit("85-359-0277")    # => {:ok, "5"}
+Exisbn.isbn10_checkdigit("5-02-013850")    # => {:ok, "9"}
+Exisbn.isbn10_checkdigit("887385107")      # => {:ok, "X"}
+Exisbn.isbn10_checkdigit("0str")           # => {:error, :invalid_isbn}
+
+# Bang form (raises on error)
+Exisbn.isbn10_checkdigit!("85-359-0277")   # => "5"
+Exisbn.isbn10_checkdigit!("invalid")       # ** (ArgumentError) Invalid ISBN
+```
+
+#### `isbn13_checkdigit(isbn)` / `isbn13_checkdigit!(isbn)` — Calculate ISBN-13 check digit
+
+Returns the check digit for an ISBN-13 (always a digit 0-9).
+
+```elixir
+# Standard form
+Exisbn.isbn13_checkdigit("978-5-12345-678")     # => {:ok, "1"}
+Exisbn.isbn13_checkdigit("978-0-306-40615")     # => {:ok, "7"}
+Exisbn.isbn13_checkdigit("0str")                # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.isbn13_checkdigit!("978-5-12345-678")    # => "1"
+```
+
+### Conversion Functions
+
+#### `isbn10_to_13(isbn)` / `isbn10_to_13!(isbn)` — Convert ISBN-10 to ISBN-13
+
+Converts a valid ISBN-10 to ISBN-13 format by prefixing `978` and recalculating the check digit.
+
+```elixir
+# Standard form
+Exisbn.isbn10_to_13("85-359-0277-5")       # => {:ok, "9788535902778"}
+Exisbn.isbn10_to_13("0306406152")          # => {:ok, "9780306406157"}
+Exisbn.isbn10_to_13("invalid")             # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.isbn10_to_13!("85-359-0277-5")      # => "9788535902778"
+Exisbn.isbn10_to_13!("invalid")            # ** (ArgumentError) Invalid ISBN
+
+# Verify conversion result
+Exisbn.valid?("9788535902778")             # => true
+```
+
+#### `isbn13_to_10(isbn)` / `isbn13_to_10!(isbn)` — Convert ISBN-13 to ISBN-10
+
+Converts a valid ISBN-13 to ISBN-10 format by removing the prefix and recalculating the check digit. Only works for ISBN-13s with `978` prefix.
+
+```elixir
+# Standard form
+Exisbn.isbn13_to_10("9788535902778")       # => {:ok, "8535902775"}
+Exisbn.isbn13_to_10("9780306406157")       # => {:ok, "0306406152"}
+Exisbn.isbn13_to_10("str")                 # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.isbn13_to_10!("9788535902778")      # => "8535902775"
+Exisbn.isbn13_to_10!("invalid")            # ** (ArgumentError) Invalid ISBN
+
+# Verify conversion result
+Exisbn.valid?("8535902775")                # => true
+```
+
+**Note:** ISBN-13s starting with `979` cannot be converted to ISBN-10 and will return an error.
+
+### Formatting Functions
+
+#### `hyphenate(isbn)` / `hyphenate!(isbn)` — Format ISBN with hyphens
+
+Returns the ISBN formatted with correct hyphens according to its publisher zone.
+
+```elixir
+# Standard form
+Exisbn.hyphenate("9788535902778")          # => {:ok, "978-85-359-0277-8"}
+Exisbn.hyphenate("0306406152")             # => {:ok, "0-306-40615-2"}
+Exisbn.hyphenate("str")                    # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.hyphenate!("9788535902778")         # => "978-85-359-0277-8"
+Exisbn.hyphenate!("0306406152")            # => "0-306-40615-2"
+```
+
+### Metadata Extraction Functions
+
+#### `fetch_prefix(isbn)` — Get ISBN prefix (group identifier)
+
+Returns the ISBN prefix including group identifier (e.g., `978-85` for Brazil).
+
+```elixir
+Exisbn.fetch_prefix("9788535902778")       # => {:ok, "978-85"}
+Exisbn.fetch_prefix("2-1234-5680-2")       # => {:ok, "978-2"}
+Exisbn.fetch_prefix("str")                 # => {:error, :invalid_isbn}
+```
+
+#### `publisher_zone(isbn)` / `publisher_zone!(isbn)` — Get publisher zone/country
+
+Returns the geographic zone or language group associated with the ISBN prefix.
+
+```elixir
+# Standard form
+Exisbn.publisher_zone("9788535902778")     # => {:ok, "Brazil"}
+Exisbn.publisher_zone("2-1234-5680-2")     # => {:ok, "French language"}
+Exisbn.publisher_zone("str")               # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.publisher_zone!("9788535902778")    # => "Brazil"
+Exisbn.publisher_zone!("2-1234-5680-2")    # => "French language"
+```
+
+#### `fetch_checkdigit(isbn)` / `fetch_checkdigit!(isbn)` — Extract check digit
+
+Returns the check digit character from the ISBN (as a string). For ISBN-10, this may be `X`.
+
+```elixir
+# Standard form
+Exisbn.fetch_checkdigit("9788535902778")   # => {:ok, "8"}
+Exisbn.fetch_checkdigit("2-1234-5680-2")   # => {:ok, "2"}
+Exisbn.fetch_checkdigit("887385107X")      # => {:ok, "X"}
+Exisbn.fetch_checkdigit("str")             # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.fetch_checkdigit!("9788535902778")  # => "8"
+Exisbn.fetch_checkdigit!("887385107X")     # => "X"
+```
+
+#### `fetch_registrant_element(isbn)` / `fetch_registrant_element!(isbn)` — Get registrant identifier
+
+Returns the registrant element (publisher identifier) of the ISBN.
+
+```elixir
+# Standard form
+Exisbn.fetch_registrant_element("9788535902778")       # => {:ok, "359"}
+Exisbn.fetch_registrant_element("978-1-86197-876-9")   # => {:ok, "86197"}
+Exisbn.fetch_registrant_element("9789529351787")       # => {:ok, "93"}
+Exisbn.fetch_registrant_element("str")                 # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.fetch_registrant_element!("9788535902778")      # => "359"
+Exisbn.fetch_registrant_element!("978-1-86197-876-9")  # => "86197"
+```
+
+#### `fetch_publication_element(isbn)` / `fetch_publication_element!(isbn)` — Get publication/title identifier
+
+Returns the publication element (title/publication identifier) of the ISBN.
+
+```elixir
+# Standard form
+Exisbn.fetch_publication_element("978-1-86197-876-9")  # => {:ok, "876"}
+Exisbn.fetch_publication_element("9789529351787")      # => {:ok, "5178"}
+Exisbn.fetch_publication_element("str")                # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.fetch_publication_element!("978-1-86197-876-9") # => "876"
+Exisbn.fetch_publication_element!("9789529351787")     # => "5178"
+```
+
+## Input Handling
+
+The library is flexible with input formatting:
+
+```elixir
+# All these are equivalent:
+Exisbn.valid?("9788535902778")             # => true
+Exisbn.valid?("978-85-359-0277-8")         # => true
+Exisbn.valid?("978 85 359 0277 8")         # => true
+
+# ISBN-10 with check digit X
+Exisbn.valid?("887385107X")                # => true (uppercase X)
+Exisbn.valid?("887385107x")                # => true (lowercase x is converted)
+```
+
+The library internally normalizes input by extracting digits and the `X` check digit character, so ISBNs with or without hyphens, spaces, or mixed case `X` are accepted.
+
+## ISBN Specifications
+
+### ISBN-10
+
+- 10 characters total
+- Last character may be a digit (0-9) or `X` (representing 10)
+- Uses modulo 11 checksum algorithm
+- Convertible to ISBN-13 by prefixing `978`
+
+### ISBN-13
+
+- 13 digits total
+- Common prefixes: `978` or `979`
+- Uses modulo 10 checksum algorithm
+- ISBN-13 with `978` prefix can be converted back to ISBN-10
+- ISBN-13 with `979` prefix cannot be converted to ISBN-10
+
+## Error Handling
+
+Standard functions return error tuples:
+
+```elixir
+case Exisbn.isbn10_to_13("invalid") do
+  {:ok, converted} -> IO.puts("Converted: #{converted}")
+  {:error, :invalid_isbn} -> IO.puts("Invalid ISBN")
+end
+```
+
+Bang functions raise `ArgumentError` on failure:
+
+```elixir
+try do
+  Exisbn.isbn10_to_13!("invalid")
+rescue
+  ArgumentError -> IO.puts("Invalid ISBN")
+end
+```
+
+## Examples
+
+### Validate and format an ISBN
+
+```elixir
+isbn = "978-85-359-0277-8"
+
+if Exisbn.valid?(isbn) do
+  {:ok, formatted} = Exisbn.hyphenate(isbn)
+  IO.puts("Valid ISBN: #{formatted}")
+else
+  IO.puts("Invalid ISBN")
+end
+```
+
+### Convert and extract information
+
+```elixir
+isbn10 = "85-359-0277-5"
+
+with {:ok, isbn13} <- Exisbn.isbn10_to_13(isbn10),
+     {:ok, zone} <- Exisbn.publisher_zone(isbn13),
+     {:ok, prefix} <- Exisbn.fetch_prefix(isbn13) do
+  IO.puts("ISBN-10: #{isbn10}")
+  IO.puts("ISBN-13: #{isbn13}")
+  IO.puts("Publisher Zone: #{zone}")
+  IO.puts("Prefix: #{prefix}")
+else
+  {:error, :invalid_isbn} -> IO.puts("Invalid ISBN")
+end
+```
+
+### Find ISBN details
+
+```elixir
+isbn = "978-1-86197-876-9"
+
+with true <- Exisbn.valid?(isbn),
+     {:ok, zone} <- Exisbn.publisher_zone(isbn),
+     {:ok, registrant} <- Exisbn.fetch_registrant_element(isbn),
+     {:ok, publication} <- Exisbn.fetch_publication_element(isbn) do
+  IO.puts("Zone: #{zone}")
+  IO.puts("Registrant: #{registrant}")
+  IO.puts("Publication: #{publication}")
+else
+  _ -> IO.puts("Could not extract ISBN details")
+end
+```
+
+## Documentation
+
+Full API documentation with more examples is available at [HexDocs](https://hexdocs.pm/exisbn/Exisbn.html).
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests on [GitHub](https://github.com/solar05/exisbn).
