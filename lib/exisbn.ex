@@ -49,13 +49,9 @@ defmodule Exisbn do
   """
   @spec isbn10_checkdigit!(String.t()) :: String.t()
   def isbn10_checkdigit!(isbn) when is_bitstring(isbn) do
-    if String.length(normalize(isbn)) in 8..10 do
-      case calculate_isbn10_checkdigit(isbn) do
-        {:ok, digit} -> digit
-        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
-      end
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case isbn10_checkdigit(isbn) do
+      {:ok, digit} -> digit
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -97,13 +93,9 @@ defmodule Exisbn do
   """
   @spec isbn13_checkdigit!(binary) :: String.t()
   def isbn13_checkdigit!(isbn) when is_bitstring(isbn) do
-    if String.length(normalize(isbn)) in 11..13 do
-      case calculate_isbn13_checkdigit(isbn) do
-        {:ok, digit} -> digit
-        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
-      end
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case isbn13_checkdigit(isbn) do
+      {:ok, digit} -> digit
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -204,12 +196,9 @@ defmodule Exisbn do
   """
   @spec isbn10_to_13!(String.t()) :: String.t()
   def isbn10_to_13!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      first_chars = "978#{String.slice(normalize(isbn), 0..8)}"
-      {:ok, checkdigit} = isbn13_checkdigit(first_chars)
-      "#{first_chars}#{checkdigit}"
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case isbn10_to_13(isbn) do
+      {:ok, result} -> result
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -377,15 +366,9 @@ defmodule Exisbn do
   """
   @spec publisher_country_code!(String.t()) :: String.t() | nil
   def publisher_country_code!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      prepared_isbn = prepare_isbn_13(isbn)
-
-      case fetch_info(prepared_isbn) do
-        nil -> raise(ArgumentError, "Invalid ISBN")
-        info -> Map.get(info, "country_code")
-      end
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case publisher_country_code(isbn) do
+      {:ok, code} -> code
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -482,10 +465,9 @@ defmodule Exisbn do
   """
   @spec fetch_checkdigit!(String.t()) :: String.t()
   def fetch_checkdigit!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      isbn |> normalize() |> String.last()
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case fetch_checkdigit(isbn) do
+      {:ok, digit} -> digit
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -518,24 +500,7 @@ defmodule Exisbn do
       prepared_isbn = prepare_isbn_13(isbn)
 
       with {:ok, prefix} <- fetch_prefix(prepared_isbn) do
-        ranges = fetch_ranges(prepared_isbn)
-        body = fetch_body(prepared_isbn, prefix)
-
-        if Enum.empty?(ranges) do
-          {:error, :unknown_publisher}
-        else
-          Enum.reduce_while(ranges, "", fn range, _ ->
-            beg = String.to_integer(List.first(range))
-            ending = String.to_integer(List.last(range))
-            length = String.length(List.last(range)) - 1
-            range_part = String.slice(body, 0..length)
-            area = String.to_integer(range_part)
-
-            if beg <= area && area <= ending,
-              do: {:halt, {:ok, range_part}},
-              else: {:cont, {:error, :unknown_publisher}}
-          end)
-        end
+        registrant_with_prefix(prepared_isbn, prefix)
       end
     else
       {:error, :invalid_isbn}
@@ -597,10 +562,8 @@ defmodule Exisbn do
       prepared_isbn = prepare_isbn_13(isbn)
 
       with {:ok, prefix} <- fetch_prefix(prepared_isbn),
-           {:ok, registrant} <- fetch_registrant_element(prepared_isbn) do
-        normalized_prefix = normalize(prefix)
-        body = fetch_body(prepared_isbn, normalized_prefix)
-        {:ok, drop_chars(body, String.length(registrant) + 1)}
+           {:ok, registrant} <- registrant_with_prefix(prepared_isbn, prefix) do
+        publication_with_prefix_and_registrant(prepared_isbn, prefix, registrant)
       end
     else
       {:error, :invalid_isbn}
@@ -668,13 +631,9 @@ defmodule Exisbn do
   """
   @spec hyphenate!(String.t()) :: String.t()
   def hyphenate!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      case if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn) do
-        {:ok, result} -> result
-        {:error, _} -> raise(ArgumentError, "Invalid ISBN")
-      end
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case hyphenate(isbn) do
+      {:ok, result} -> result
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -696,13 +655,93 @@ defmodule Exisbn do
   """
   @spec correct_hyphens?(binary) :: boolean
   def correct_hyphens?(isbn) when is_bitstring(isbn) do
+    case hyphenate(isbn) do
+      {:ok, hyphenated} -> isbn == hyphenated
+      {:error, _} -> false
+    end
+  end
+
+  @doc """
+  Returns all ISBN metadata in a single call.
+
+  Fetches the prefix, publisher zone, ISO country code, registrant element,
+  publication element, and check digit without redundant lookups.
+
+  Returns `{:error, :invalid_isbn}` for structurally invalid ISBNs,
+  `{:error, :unknown_group}` when the registration group is not in the dataset,
+  and `{:error, :unknown_publisher}` when the group has no publisher ranges defined.
+
+  ## Examples
+
+      iex> Exisbn.fetch_metadata("9788535902778")
+      {:ok, %{checkdigit: "8", country_code: "BR", prefix: "978-85", publication: "0277", registrant: "359", zone: "Brazil"}}
+
+      iex> Exisbn.fetch_metadata("9780306406157")
+      {:ok, %{checkdigit: "7", country_code: nil, prefix: "978-0", publication: "40615", registrant: "306", zone: "English language"}}
+
+      iex> Exisbn.fetch_metadata("str")
+      {:error, :invalid_isbn}
+
+      iex> Exisbn.fetch_metadata("9799012345674")
+      {:error, :unknown_group}
+
+  """
+  @spec fetch_metadata(String.t()) ::
+          {:ok,
+           %{
+             prefix: String.t(),
+             zone: String.t(),
+             country_code: String.t() | nil,
+             registrant: String.t(),
+             publication: String.t(),
+             checkdigit: String.t()
+           }}
+          | {:error, :invalid_isbn | :unknown_group | :unknown_publisher}
+  def fetch_metadata(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      case hyphenate(isbn) do
-        {:ok, hyphenated} -> isbn == hyphenated
-        {:error, _} -> false
+      isbn13 = prepare_isbn_13(isbn)
+
+      with {:ok, prefix} <- fetch_prefix(isbn13),
+           {:ok, registrant} <- registrant_with_prefix(isbn13, prefix),
+           {:ok, publication} <-
+             publication_with_prefix_and_registrant(isbn13, prefix, registrant) do
+        info = Map.get(Regions.dataset(), prefix)
+
+        {:ok,
+         %{
+           prefix: prefix,
+           zone: Map.get(info, "name"),
+           country_code: Map.get(info, "country_code"),
+           registrant: registrant,
+           publication: publication,
+           checkdigit: isbn |> normalize() |> String.last()
+         }}
       end
     else
-      false
+      {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `fetch_metadata/1`, but raises exception.
+
+  ## Examples
+
+      iex> meta = Exisbn.fetch_metadata!("9788535902778")
+      iex> meta.zone
+      "Brazil"
+      iex> meta.country_code
+      "BR"
+
+      iex> Exisbn.fetch_metadata!("str")
+      ** (ArgumentError) Invalid ISBN
+
+  """
+  @spec fetch_metadata!(String.t()) :: map()
+  def fetch_metadata!(isbn) when is_bitstring(isbn) do
+    case fetch_metadata(isbn) do
+      {:ok, metadata} -> metadata
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -763,7 +802,35 @@ defmodule Exisbn do
     end
   end
 
-  defp normalize(isbn) do
+  @doc """
+  Normalizes an ISBN string by removing separators and uppercasing.
+
+  Strips hyphens, spaces, and any non-digit characters, then upcases the
+  result so the check-digit `x` becomes `X`. Returns a bare digit string
+  (plus optional trailing `X` for ISBN-10).
+
+  This function does **not** validate the ISBN — use `valid?/1` for that.
+
+  ## Examples
+
+      iex> Exisbn.normalize("978-85-359-0277-8")
+      "9788535902778"
+
+      iex> Exisbn.normalize("85-359-0277-5")
+      "8535902775"
+
+      iex> Exisbn.normalize("978 85 359 0277 8")
+      "9788535902778"
+
+      iex> Exisbn.normalize("887385107x")
+      "887385107X"
+
+      iex> Exisbn.normalize("9788535902778")
+      "9788535902778"
+
+  """
+  @spec normalize(String.t()) :: String.t()
+  def normalize(isbn) do
     isbn
     |> String.upcase()
     |> String.split("", trim: true)
@@ -829,20 +896,15 @@ defmodule Exisbn do
     end
   end
 
-  defp fetch_ranges(isbn) do
-    case fetch_info(isbn) do
-      nil -> []
-      info -> Map.get(info, "ranges", [])
-    end
-  end
-
   defp hyphenate_isbn13(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      with {:ok, prefix} <- fetch_prefix(isbn),
-           {:ok, registrant_element} <- fetch_registrant_element(isbn),
-           {:ok, publication_element} <- fetch_publication_element(isbn),
-           {:ok, checkdigit} <- fetch_checkdigit(isbn) do
-        {:ok, Enum.join([prefix, registrant_element, publication_element, checkdigit], "-")}
+      isbn13 = normalize(isbn)
+
+      with {:ok, prefix} <- fetch_prefix(isbn13),
+           {:ok, registrant} <- registrant_with_prefix(isbn13, prefix),
+           {:ok, publication} <-
+             publication_with_prefix_and_registrant(isbn13, prefix, registrant) do
+        {:ok, Enum.join([prefix, registrant, publication, String.last(isbn13)], "-")}
       else
         _ -> {:error, :invalid_isbn}
       end
@@ -853,20 +915,55 @@ defmodule Exisbn do
 
   defp hyphenate_isbn10(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      with {:ok, converted} <- isbn10_to_13(isbn),
-           {:ok, full_prefix} <- fetch_prefix(converted),
-           {:ok, registrant_element} <- fetch_registrant_element(isbn),
-           {:ok, publication_element} <- fetch_publication_element(isbn),
-           {:ok, checkdigit} <- fetch_checkdigit(isbn) do
+      with {:ok, isbn13} <- isbn10_to_13(isbn),
+           {:ok, full_prefix} <- fetch_prefix(isbn13),
+           {:ok, registrant} <- registrant_with_prefix(isbn13, full_prefix),
+           {:ok, publication} <-
+             publication_with_prefix_and_registrant(isbn13, full_prefix, registrant) do
         isbn10_prefix = String.split(full_prefix, "-", trim: true) |> List.last()
+        checkdigit = isbn |> normalize() |> String.last()
 
-        {:ok,
-         Enum.join([isbn10_prefix, registrant_element, publication_element, checkdigit], "-")}
+        {:ok, Enum.join([isbn10_prefix, registrant, publication, checkdigit], "-")}
       else
         _ -> {:error, :invalid_isbn}
       end
     else
       {:error, :invalid_isbn}
     end
+  end
+
+  # Finds the registrant element given a pre-computed prefix and ISBN-13, avoiding
+  # a redundant fetch_prefix call compared to the public fetch_registrant_element/1.
+  defp registrant_with_prefix(isbn13, prefix) do
+    ranges =
+      case Map.get(Regions.dataset(), prefix) do
+        nil -> []
+        info -> Map.get(info, "ranges", [])
+      end
+
+    body = fetch_body(isbn13, prefix)
+
+    if Enum.empty?(ranges) do
+      {:error, :unknown_publisher}
+    else
+      Enum.reduce_while(ranges, {:error, :unknown_publisher}, fn range, _ ->
+        beg = String.to_integer(List.first(range))
+        ending = String.to_integer(List.last(range))
+        length = String.length(List.last(range)) - 1
+        range_part = String.slice(body, 0..length)
+        area = String.to_integer(range_part)
+
+        if beg <= area && area <= ending,
+          do: {:halt, {:ok, range_part}},
+          else: {:cont, {:error, :unknown_publisher}}
+      end)
+    end
+  end
+
+  # Derives the publication element given pre-computed prefix and registrant,
+  # avoiding redundant lookups compared to the public fetch_publication_element/1.
+  defp publication_with_prefix_and_registrant(isbn13, prefix, registrant) do
+    body = fetch_body(isbn13, normalize(prefix))
+    {:ok, drop_chars(body, String.length(registrant) + 1)}
   end
 end

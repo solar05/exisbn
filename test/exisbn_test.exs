@@ -97,4 +97,190 @@ defmodule ExisbnTest do
   test "979-13 Spain hyphenation" do
     assert {:ok, "979-13-00-12345-2"} = Exisbn.hyphenate("9791300123452")
   end
+
+  # fetch_metadata tests
+  describe "fetch_metadata/1" do
+    test "returns complete metadata for a known ISBN-13" do
+      assert {:ok, meta} = Exisbn.fetch_metadata("9788535902778")
+      assert meta.prefix == "978-85"
+      assert meta.zone == "Brazil"
+      assert meta.country_code == "BR"
+      assert meta.registrant == "359"
+      assert meta.publication == "0277"
+      assert meta.checkdigit == "8"
+    end
+
+    test "returns metadata for ISBN-13 with hyphens" do
+      assert {:ok, meta} = Exisbn.fetch_metadata("978-85-359-0277-8")
+      assert meta.prefix == "978-85"
+      assert meta.registrant == "359"
+    end
+
+    test "returns metadata for ISBN-10 (converted internally)" do
+      assert {:ok, meta} = Exisbn.fetch_metadata("85-359-0277-5")
+      assert meta.prefix == "978-85"
+      assert meta.zone == "Brazil"
+      assert meta.country_code == "BR"
+      assert meta.registrant == "359"
+      assert meta.publication == "0277"
+      assert meta.checkdigit == "5"
+    end
+
+    test "returns nil country_code for multi-country groups" do
+      assert {:ok, meta} = Exisbn.fetch_metadata("9780306406157")
+      assert meta.country_code == nil
+      assert meta.zone == "English language"
+    end
+
+    test "returns error for invalid ISBN" do
+      assert {:error, :invalid_isbn} = Exisbn.fetch_metadata("invalid")
+    end
+
+    test "returns error for unknown registration group" do
+      assert {:error, :unknown_group} = Exisbn.fetch_metadata("9799012345674")
+    end
+
+    test "returns error for ISBN with empty publisher ranges" do
+      assert {:error, :unknown_publisher} = Exisbn.fetch_metadata("9786110000000")
+    end
+  end
+
+  describe "fetch_metadata!/1" do
+    test "returns metadata map on success" do
+      assert %{prefix: "978-85", zone: "Brazil", country_code: "BR"} =
+               Exisbn.fetch_metadata!("9788535902778")
+    end
+
+    test "raises ArgumentError for invalid ISBN" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.fetch_metadata!("invalid")
+      end
+    end
+
+    test "raises ArgumentError for unknown group" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.fetch_metadata!("9799012345674")
+      end
+    end
+  end
+
+  # bang-function delegation tests
+  describe "isbn10_checkdigit!/1" do
+    test "returns digit on success" do
+      assert Exisbn.isbn10_checkdigit!("85-359-0277") == "5"
+    end
+
+    test "returns X when check digit is 10" do
+      assert Exisbn.isbn10_checkdigit!("887385107") == "X"
+    end
+
+    test "raises ArgumentError for invalid input" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.isbn10_checkdigit!("0str")
+      end
+    end
+  end
+
+  describe "isbn13_checkdigit!/1" do
+    test "returns digit on success" do
+      assert Exisbn.isbn13_checkdigit!("978-5-12345-678") == "1"
+    end
+
+    test "raises ArgumentError for invalid input" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.isbn13_checkdigit!("0str")
+      end
+    end
+  end
+
+  describe "isbn10_to_13!/1" do
+    test "converts valid ISBN-10 to ISBN-13" do
+      assert Exisbn.isbn10_to_13!("85-359-0277-5") == "9788535902778"
+    end
+
+    test "raises ArgumentError for invalid ISBN" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.isbn10_to_13!("invalid")
+      end
+    end
+  end
+
+  describe "publisher_country_code!/1" do
+    test "returns country code string" do
+      assert Exisbn.publisher_country_code!("9788535902778") == "BR"
+    end
+
+    test "returns nil for multi-country groups" do
+      assert Exisbn.publisher_country_code!("9780306406157") == nil
+    end
+
+    test "raises ArgumentError for invalid ISBN" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.publisher_country_code!("str")
+      end
+    end
+  end
+
+  describe "fetch_checkdigit!/1" do
+    test "returns the check digit" do
+      assert Exisbn.fetch_checkdigit!("9788535902778") == "8"
+    end
+
+    test "returns X for ISBN-10 with X check digit" do
+      assert Exisbn.fetch_checkdigit!("887385107X") == "X"
+    end
+
+    test "raises ArgumentError for invalid ISBN" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.fetch_checkdigit!("str")
+      end
+    end
+  end
+
+  describe "hyphenate!/1" do
+    test "hyphenates ISBN-13" do
+      assert Exisbn.hyphenate!("9788535902778") == "978-85-359-0277-8"
+    end
+
+    test "hyphenates ISBN-10" do
+      assert Exisbn.hyphenate!("0306406152") == "0-306-40615-2"
+    end
+
+    test "raises ArgumentError for invalid ISBN" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.hyphenate!("str")
+      end
+    end
+  end
+
+  # normalize/1 tests
+  describe "normalize/1" do
+    test "strips hyphens from ISBN-13" do
+      assert Exisbn.normalize("978-85-359-0277-8") == "9788535902778"
+    end
+
+    test "strips spaces from ISBN-13" do
+      assert Exisbn.normalize("978 85 359 0277 8") == "9788535902778"
+    end
+
+    test "strips hyphens from ISBN-10" do
+      assert Exisbn.normalize("85-359-0277-5") == "8535902775"
+    end
+
+    test "upcases lowercase x check digit" do
+      assert Exisbn.normalize("887385107x") == "887385107X"
+    end
+
+    test "is idempotent on already-clean ISBN" do
+      assert Exisbn.normalize("9788535902778") == "9788535902778"
+    end
+
+    test "drops non-digit non-X characters" do
+      assert Exisbn.normalize("978.85.359.0277.8") == "9788535902778"
+    end
+
+    test "returns empty string for fully non-numeric input" do
+      assert Exisbn.normalize("invalid") == ""
+    end
+  end
 end

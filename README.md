@@ -14,6 +14,8 @@ A lightweight Elixir library for working with ISBN (International Standard Book 
 - **Hyphenation** — Format ISBNs with correct hyphens
 - **Check Digits** — Calculate and verify ISBN check digits
 - **Metadata** — Extract publisher zones, country codes, registrant elements, and publication elements
+- **Normalization** — Strip separators and canonicalize ISBN strings
+- **Metadata** — Fetch all ISBN metadata in a single call
 - **Flexible Input** — Accepts ISBNs with or without hyphens
 
 ## Installation
@@ -52,6 +54,11 @@ Exisbn.publisher_zone("9788535902778")
 # Get the ISO 3166-1 alpha-2 country code
 Exisbn.publisher_country_code("9788535902778")
 # => {:ok, "BR"}
+
+# Fetch all metadata at once
+Exisbn.fetch_metadata("9788535902778")
+# => {:ok, %{prefix: "978-85", zone: "Brazil", country_code: "BR",
+#            registrant: "359", publication: "0277", checkdigit: "8"}}
 ```
 
 ### Validation Functions
@@ -266,6 +273,50 @@ Exisbn.fetch_registrant_element!("9788535902778")      # => "359"
 Exisbn.fetch_registrant_element!("978-1-86197-876-9")  # => "86197"
 ```
 
+#### `fetch_metadata(isbn)` / `fetch_metadata!(isbn)` — Get all metadata at once
+
+Returns a map with all ISBN metadata in a single call. More efficient than calling individual
+metadata functions separately, since the prefix and registrant lookups are performed only once.
+
+The returned map contains:
+- `prefix` — registration group prefix (e.g., `"978-85"`)
+- `zone` — publisher zone or language group name
+- `country_code` — ISO 3166-1 alpha-2 code, or `nil` for multi-country groups
+- `registrant` — registrant (publisher) identifier
+- `publication` — publication (title) identifier
+- `checkdigit` — the check digit character
+
+```elixir
+# Standard form
+Exisbn.fetch_metadata("9788535902778")
+# => {:ok, %{prefix: "978-85", zone: "Brazil", country_code: "BR",
+#            registrant: "359", publication: "0277", checkdigit: "8"}}
+
+Exisbn.fetch_metadata("9780306406157")
+# => {:ok, %{prefix: "978-0", zone: "English language", country_code: nil,
+#            registrant: "306", publication: "40615", checkdigit: "7"}}
+
+Exisbn.fetch_metadata("str")
+# => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.fetch_metadata!("9788535902778")
+# => %{prefix: "978-85", zone: "Brazil", country_code: "BR",
+#      registrant: "359", publication: "0277", checkdigit: "8"}
+
+Exisbn.fetch_metadata!("str")
+# ** (ArgumentError) Invalid ISBN
+```
+
+Works with ISBN-10 input as well — metadata is derived from the equivalent ISBN-13,
+while the check digit reflects the original ISBN-10:
+
+```elixir
+Exisbn.fetch_metadata("85-359-0277-5")
+# => {:ok, %{prefix: "978-85", zone: "Brazil", country_code: "BR",
+#            registrant: "359", publication: "0277", checkdigit: "5"}}
+```
+
 #### `fetch_publication_element(isbn)` / `fetch_publication_element!(isbn)` — Get publication/title identifier
 
 Returns the publication element (title/publication identifier) of the ISBN.
@@ -280,6 +331,25 @@ Exisbn.fetch_publication_element("str")                # => {:error, :invalid_is
 Exisbn.fetch_publication_element!("978-1-86197-876-9") # => "876"
 Exisbn.fetch_publication_element!("9789529351787")     # => "5178"
 ```
+
+### Normalization Functions
+
+#### `normalize(isbn)` — Strip separators and canonicalize
+
+Returns a bare string of digits (plus `X` for ISBN-10 check digit). Removes
+hyphens, spaces, and any non-digit characters, and upcases the result.
+
+This function does **not** validate the ISBN. Use `valid?/1` for validation.
+
+```elixir
+Exisbn.normalize("978-85-359-0277-8")   # => "9788535902778"
+Exisbn.normalize("85-359-0277-5")       # => "8535902775"
+Exisbn.normalize("978 85 359 0277 8")   # => "9788535902778"
+Exisbn.normalize("887385107x")          # => "887385107X"
+Exisbn.normalize("9788535902778")       # => "9788535902778"
+```
+
+Useful for normalizing ISBNs before storing in a database or comparing values.
 
 ## Input Handling
 
