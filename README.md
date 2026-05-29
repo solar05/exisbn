@@ -23,7 +23,7 @@ Add `exisbn` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:exisbn, "~> 2.1"}
+    {:exisbn, "~> 2.2"}
   ]
 end
 ```
