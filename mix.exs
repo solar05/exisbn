@@ -12,7 +12,13 @@ defmodule Exisbn.MixProject do
       name: "Exisbn",
       deps: deps(),
       source_url: "https://github.com/solar05/exisbn",
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls],
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
@@ -20,19 +26,6 @@ defmodule Exisbn.MixProject do
   def application do
     [
       extra_applications: [:logger]
-    ]
-  end
-
-  def cli do
-    [
-      preferred_envs: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
-        "coveralls.cobertura": :test,
-        "coveralls.json": :test
-      ]
     ]
   end
 
