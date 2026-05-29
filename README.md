@@ -12,7 +12,7 @@ A lightweight Elixir library for working with ISBN (International Standard Book 
 - **Conversion** — Convert between ISBN-10 and ISBN-13 formats
 - **Hyphenation** — Format ISBNs with correct hyphens
 - **Check Digits** — Calculate and verify ISBN check digits
-- **Metadata** — Extract publisher zones, registrant elements, and publication elements
+- **Metadata** — Extract publisher zones, country codes, registrant elements, and publication elements
 - **Flexible Input** — Accepts ISBNs with or without hyphens
 
 ## Installation
@@ -47,6 +47,10 @@ Exisbn.hyphenate("9788535902778")
 # Get the publisher zone
 Exisbn.publisher_zone("9788535902778")
 # => {:ok, "Brazil"}
+
+# Get the ISO 3166-1 alpha-2 country code
+Exisbn.publisher_country_code("9788535902778")
+# => {:ok, "BR"}
 ```
 
 ### Validation Functions
@@ -204,6 +208,26 @@ Exisbn.publisher_zone!("9788535902778")    # => "Brazil"
 Exisbn.publisher_zone!("2-1234-5680-2")    # => "French language"
 ```
 
+#### `publisher_country_code(isbn)` / `publisher_country_code!(isbn)` — Get ISO 3166-1 alpha-2 country code
+
+Returns the two-letter ISO 3166-1 alpha-2 country code for the ISBN's registration group.
+Returns `{:ok, nil}` for groups that cover multiple countries or language areas
+(e.g. `978-0`/`978-1` — English language, `978-2` — French language, `978-3` — German language,
+`978-5` — former U.S.S.R., `978-92` — International NGO Publishers, `978-976` — Caribbean Community).
+
+```elixir
+# Standard form
+Exisbn.publisher_country_code("9788535902778")     # => {:ok, "BR"}
+Exisbn.publisher_country_code("9784065393987")     # => {:ok, "JP"}
+Exisbn.publisher_country_code("9780306406157")     # => {:ok, nil}  # English language group
+Exisbn.publisher_country_code("str")               # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.publisher_country_code!("9788535902778")    # => "BR"
+Exisbn.publisher_country_code!("9784065393987")    # => "JP"
+Exisbn.publisher_country_code!("9780306406157")    # => nil
+```
+
 #### `fetch_checkdigit(isbn)` / `fetch_checkdigit!(isbn)` — Extract check digit
 
 Returns the check digit character from the ISBN (as a string). For ISBN-10, this may be `X`.
@@ -328,10 +352,12 @@ isbn10 = "85-359-0277-5"
 
 with {:ok, isbn13} <- Exisbn.isbn10_to_13(isbn10),
      {:ok, zone} <- Exisbn.publisher_zone(isbn13),
+     {:ok, country_code} <- Exisbn.publisher_country_code(isbn13),
      {:ok, prefix} <- Exisbn.fetch_prefix(isbn13) do
   IO.puts("ISBN-10: #{isbn10}")
   IO.puts("ISBN-13: #{isbn13}")
   IO.puts("Publisher Zone: #{zone}")
+  IO.puts("Country Code: #{country_code}")
   IO.puts("Prefix: #{prefix}")
 else
   {:error, :invalid_isbn} -> IO.puts("Invalid ISBN")

@@ -216,6 +216,9 @@ defmodule Exisbn do
   @doc """
   Takes an ISBN 13 and converts it to ISBN 10.
 
+  ISBNs with prefix `979` have no ISBN-10 equivalent and return
+  `{:error, :no_isbn10_equivalent}`.
+
   ## Examples
 
       iex> Exisbn.isbn13_to_10("9788535902778")
@@ -228,18 +231,22 @@ defmodule Exisbn do
       true
       iex> Exisbn.isbn13_to_10("str")
       {:error, :invalid_isbn}
+      iex> Exisbn.isbn13_to_10("9798893031355")
+      {:error, :no_isbn10_equivalent}
   """
-  @spec isbn13_to_10(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec isbn13_to_10(String.t()) ::
+          {:ok, String.t()} | {:error, :invalid_isbn | :no_isbn10_equivalent}
   def isbn13_to_10(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      first_chars =
-        isbn
-        |> normalize()
-        |> drop_chars(3)
-        |> String.slice(0..8)
+      normalized = normalize(isbn)
 
-      {:ok, checkdigit} = isbn10_checkdigit(first_chars)
-      {:ok, "#{first_chars}#{checkdigit}"}
+      if String.starts_with?(normalized, "979") do
+        {:error, :no_isbn10_equivalent}
+      else
+        first_chars = normalized |> drop_chars(3) |> String.slice(0..8)
+        {:ok, checkdigit} = isbn10_checkdigit(first_chars)
+        {:ok, "#{first_chars}#{checkdigit}"}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -260,25 +267,23 @@ defmodule Exisbn do
       true
       iex> Exisbn.isbn13_to_10!("str")
       ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.isbn13_to_10!("9798893031355")
+      ** (ArgumentError) Invalid ISBN
   """
   @spec isbn13_to_10!(String.t()) :: String.t()
   def isbn13_to_10!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      first_chars =
-        isbn
-        |> normalize()
-        |> drop_chars(3)
-        |> String.slice(0..8)
-
-      {:ok, checkdigit} = isbn10_checkdigit(first_chars)
-      "#{first_chars}#{checkdigit}"
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case isbn13_to_10(isbn) do
+      {:ok, result} -> result
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
   @doc """
   Takes an ISBN and returns its publisher zone.
+
+  Returns `{:error, :invalid_isbn}` for ISBNs whose registration group
+  is not present in the dataset.
 
   ## Examples
 
@@ -288,12 +293,18 @@ defmodule Exisbn do
       {:ok, "French language"}
       iex> Exisbn.publisher_zone("str")
       {:error, :invalid_isbn}
+      iex> Exisbn.publisher_zone("9799012345674")
+      {:error, :invalid_isbn}
   """
   @spec publisher_zone(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def publisher_zone(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
-      {:ok, Map.get(fetch_info(prepared_isbn), "name")}
+
+      case fetch_info(prepared_isbn) do
+        nil -> {:error, :invalid_isbn}
+        info -> {:ok, Map.get(info, "name")}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -310,12 +321,69 @@ defmodule Exisbn do
       "French language"
       iex> Exisbn.publisher_zone!("str")
       ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.publisher_zone!("9799012345674")
+      ** (ArgumentError) Invalid ISBN
   """
   @spec publisher_zone!(String.t()) :: String.t()
   def publisher_zone!(isbn) when is_bitstring(isbn) do
+    case publisher_zone(isbn) do
+      {:ok, zone} -> zone
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
+  Takes an ISBN and returns its ISO 3166-1 alpha-2 country code.
+
+  Returns `{:ok, nil}` for groups that span multiple countries or
+  language areas (e.g. English language, French language, German language,
+  former U.S.S.R, Caribbean Community).
+
+  ## Examples
+
+      iex> Exisbn.publisher_country_code("9788535902778")
+      {:ok, "BR"}
+      iex> Exisbn.publisher_country_code("9780306406157")
+      {:ok, nil}
+      iex> Exisbn.publisher_country_code("str")
+      {:error, :invalid_isbn}
+  """
+  @spec publisher_country_code(String.t()) :: {:ok, String.t() | nil} | {:error, :invalid_isbn}
+  def publisher_country_code(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
-      Map.get(fetch_info(prepared_isbn), "name")
+
+      case fetch_info(prepared_isbn) do
+        nil -> {:error, :invalid_isbn}
+        info -> {:ok, Map.get(info, "country_code")}
+      end
+    else
+      {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `publisher_country_code/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.publisher_country_code!("9788535902778")
+      "BR"
+      iex> Exisbn.publisher_country_code!("9780306406157")
+      nil
+      iex> Exisbn.publisher_country_code!("str")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec publisher_country_code!(String.t()) :: String.t() | nil
+  def publisher_country_code!(isbn) when is_bitstring(isbn) do
+    if correct?(isbn) do
+      prepared_isbn = prepare_isbn_13(isbn)
+
+      case fetch_info(prepared_isbn) do
+        nil -> raise(ArgumentError, "Invalid ISBN")
+        info -> Map.get(info, "country_code")
+      end
     else
       raise(ArgumentError, "Invalid ISBN")
     end
@@ -323,6 +391,9 @@ defmodule Exisbn do
 
   @doc """
   Takes an ISBN and returns its prefix.
+
+  Returns `{:error, :unknown_group}` when the ISBN is structurally valid but belongs
+  to a registration group not present in the dataset.
 
   ## Examples
 
@@ -332,14 +403,18 @@ defmodule Exisbn do
       {:ok, "978-2"}
       iex> Exisbn.fetch_prefix("str")
       {:error, :invalid_isbn}
+      iex> Exisbn.fetch_prefix("9799012345674")
+      {:error, :unknown_group}
   """
-  @spec fetch_prefix(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec fetch_prefix(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn | :unknown_group}
   def fetch_prefix(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
-      {:ok,
-       search_prefix_range(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0)}
+      case search_prefix_range(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0) do
+        nil -> {:error, :unknown_group}
+        prefix -> {:ok, prefix}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -394,6 +469,9 @@ defmodule Exisbn do
   @doc """
   Takes an ISBN and returns its registrant element.
 
+  Returns `{:error, :unknown_group}` when the registration group is not in the dataset,
+  and `{:error, :unknown_publisher}` when the group has no publisher ranges defined.
+
   ## Examples
 
       iex> Exisbn.fetch_registrant_element("9788535902778")
@@ -404,28 +482,38 @@ defmodule Exisbn do
       {:ok, "93"}
       iex> Exisbn.fetch_registrant_element("str")
       {:error, :invalid_isbn}
+      iex> Exisbn.fetch_registrant_element("9799012345674")
+      {:error, :unknown_group}
+      iex> Exisbn.fetch_registrant_element("9786110000000")
+      {:error, :unknown_publisher}
   """
-  @spec fetch_registrant_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec fetch_registrant_element(String.t()) ::
+          {:ok, String.t()}
+          | {:error, :invalid_isbn | :unknown_group | :unknown_publisher}
   def fetch_registrant_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
-      {:ok, prefix} = fetch_prefix(prepared_isbn)
-      ranges = fetch_ranges(prepared_isbn)
+      with {:ok, prefix} <- fetch_prefix(prepared_isbn) do
+        ranges = fetch_ranges(prepared_isbn)
+        body = fetch_body(prepared_isbn, prefix)
 
-      body = fetch_body(prepared_isbn, prefix)
+        if Enum.empty?(ranges) do
+          {:error, :unknown_publisher}
+        else
+          Enum.reduce_while(ranges, "", fn range, _ ->
+            beg = String.to_integer(List.first(range))
+            ending = String.to_integer(List.last(range))
+            length = String.length(List.last(range)) - 1
+            range_part = String.slice(body, 0..length)
+            area = String.to_integer(range_part)
 
-      Enum.reduce_while(ranges, "", fn range, _ ->
-        beg = String.to_integer(List.first(range))
-        ending = String.to_integer(List.last(range))
-        length = String.length(List.last(range)) - 1
-        range_part = String.slice(body, 0..length)
-        area = String.to_integer(range_part)
-
-        if beg <= area && area <= ending,
-          do: {:halt, {:ok, range_part}},
-          else: {:cont, {:error, :invalid_isbn}}
-      end)
+            if beg <= area && area <= ending,
+              do: {:halt, {:ok, range_part}},
+              else: {:cont, {:error, :invalid_isbn}}
+          end)
+        end
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -444,35 +532,26 @@ defmodule Exisbn do
       "93"
       iex> Exisbn.fetch_registrant_element!("str")
       ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.fetch_registrant_element!("9799012345674")
+      ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.fetch_registrant_element!("9786110000000")
+      ** (ArgumentError) Invalid ISBN
   """
   @spec fetch_registrant_element!(String.t()) :: String.t()
   def fetch_registrant_element!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      prepared_isbn = prepare_isbn_13(isbn)
-
-      {:ok, prefix} = fetch_prefix(prepared_isbn)
-      ranges = fetch_ranges(prepared_isbn)
-
-      body = fetch_body(prepared_isbn, prefix)
-
-      Enum.reduce_while(ranges, "", fn range, _ ->
-        beg = String.to_integer(List.first(range))
-        ending = String.to_integer(List.last(range))
-        length = String.length(List.last(range)) - 1
-        range_part = String.slice(body, 0..length)
-        area = String.to_integer(range_part)
-
-        if beg <= area && area <= ending,
-          do: {:halt, range_part},
-          else: {:cont, {:error, :invalid_isbn}}
-      end)
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case fetch_registrant_element(isbn) do
+      {:ok, result} -> result
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
   @doc """
   Takes an ISBN and returns its publication element.
+
+  Propagates `{:error, :unknown_group}` and `{:error, :unknown_publisher}`
+  from `fetch_registrant_element/1`.
 
   ## Examples
 
@@ -482,18 +561,24 @@ defmodule Exisbn do
       {:ok, "5178"}
       iex> Exisbn.fetch_publication_element("str")
       {:error, :invalid_isbn}
+      iex> Exisbn.fetch_publication_element("9799012345674")
+      {:error, :unknown_group}
+      iex> Exisbn.fetch_publication_element("9786110000000")
+      {:error, :unknown_publisher}
   """
-  @spec fetch_publication_element(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec fetch_publication_element(String.t()) ::
+          {:ok, String.t()}
+          | {:error, :invalid_isbn | :unknown_group | :unknown_publisher}
   def fetch_publication_element(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
-      {:ok, prefix} = fetch_prefix(prepared_isbn)
-      normalized_prefix = normalize(prefix)
-      body = fetch_body(prepared_isbn, normalized_prefix)
-      {:ok, registrant} = fetch_registrant_element(prepared_isbn)
-
-      {:ok, drop_chars(body, String.length(registrant) + 1)}
+      with {:ok, prefix} <- fetch_prefix(prepared_isbn),
+           {:ok, registrant} <- fetch_registrant_element(prepared_isbn) do
+        normalized_prefix = normalize(prefix)
+        body = fetch_body(prepared_isbn, normalized_prefix)
+        {:ok, drop_chars(body, String.length(registrant) + 1)}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -510,20 +595,18 @@ defmodule Exisbn do
       "5178"
       iex> Exisbn.fetch_publication_element!("str")
       ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.fetch_publication_element!("9799012345674")
+      ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.fetch_publication_element!("9786110000000")
+      ** (ArgumentError) Invalid ISBN
   """
   @spec fetch_publication_element!(String.t()) :: String.t()
   def fetch_publication_element!(isbn) when is_bitstring(isbn) do
-    if correct?(isbn) do
-      prepared_isbn = prepare_isbn_13(isbn)
-
-      {:ok, prefix} = fetch_prefix(prepared_isbn)
-      normalized_prefix = normalize(prefix)
-      body = fetch_body(prepared_isbn, normalized_prefix)
-      {:ok, registrant} = fetch_registrant_element(prepared_isbn)
-
-      drop_chars(body, String.length(registrant) + 1)
-    else
-      raise(ArgumentError, "Invalid ISBN")
+    case fetch_publication_element(isbn) do
+      {:ok, result} -> result
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
     end
   end
 
@@ -694,12 +777,10 @@ defmodule Exisbn do
   end
 
   defp search_prefix_range(prefix, body, search_length) do
-    # Prevent infinite recursion by limiting search depth
     max_search_length = String.length(body)
 
     if search_length > max_search_length do
-      # Fallback: return the longest possible prefix found
-      prefix
+      nil
     else
       search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
 
@@ -720,8 +801,10 @@ defmodule Exisbn do
   end
 
   defp fetch_info(isbn) do
-    {:ok, prefix} = fetch_prefix(isbn)
-    Map.get(Regions.dataset(), prefix)
+    case fetch_prefix(isbn) do
+      {:ok, prefix} -> Map.get(Regions.dataset(), prefix)
+      {:error, _} -> nil
+    end
   end
 
   defp fetch_ranges(isbn) do
@@ -733,21 +816,14 @@ defmodule Exisbn do
 
   defp hyphenate_isbn13(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      {:ok, prefix} = fetch_prefix(isbn)
-      {:ok, registrant_element} = fetch_registrant_element(isbn)
-      {:ok, publication_element} = fetch_publication_element(isbn)
-      {:ok, checkdigit} = fetch_checkdigit(isbn)
-
-      {:ok,
-       Enum.join(
-         [
-           prefix,
-           registrant_element,
-           publication_element,
-           checkdigit
-         ],
-         "-"
-       )}
+      with {:ok, prefix} <- fetch_prefix(isbn),
+           {:ok, registrant_element} <- fetch_registrant_element(isbn),
+           {:ok, publication_element} <- fetch_publication_element(isbn),
+           {:ok, checkdigit} <- fetch_checkdigit(isbn) do
+        {:ok, Enum.join([prefix, registrant_element, publication_element, checkdigit], "-")}
+      else
+        _ -> {:error, :invalid_isbn}
+      end
     else
       {:error, :invalid_isbn}
     end
@@ -755,24 +831,18 @@ defmodule Exisbn do
 
   defp hyphenate_isbn10(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      {:ok, converted} = isbn10_to_13(isbn)
-      {:ok, full_prefix} = fetch_prefix(converted)
-      {:ok, registrant_element} = fetch_registrant_element(isbn)
-      {:ok, publication_element} = fetch_publication_element(isbn)
-      {:ok, checkdigit} = fetch_checkdigit(isbn)
+      with {:ok, converted} <- isbn10_to_13(isbn),
+           {:ok, full_prefix} <- fetch_prefix(converted),
+           {:ok, registrant_element} <- fetch_registrant_element(isbn),
+           {:ok, publication_element} <- fetch_publication_element(isbn),
+           {:ok, checkdigit} <- fetch_checkdigit(isbn) do
+        isbn10_prefix = String.split(full_prefix, "-", trim: true) |> List.last()
 
-      isbn10_prefix = String.split(full_prefix, "-", trim: true) |> List.last()
-
-      {:ok,
-       Enum.join(
-         [
-           isbn10_prefix,
-           registrant_element,
-           publication_element,
-           checkdigit
-         ],
-         "-"
-       )}
+        {:ok,
+         Enum.join([isbn10_prefix, registrant_element, publication_element, checkdigit], "-")}
+      else
+        _ -> {:error, :invalid_isbn}
+      end
     else
       {:error, :invalid_isbn}
     end

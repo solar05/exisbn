@@ -4,9 +4,14 @@ defmodule Exisbn.Regions do
   """
 
   @dataset %{
-    "978-99973" => %{"name" => "Mongolia", "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]},
+    "978-99973" => %{
+      "name" => "Mongolia",
+      "country_code" => "MN",
+      "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]
+    },
     "978-9981" => %{
       "name" => "Morocco",
+      "country_code" => "MA",
       "ranges" => [
         ["00", "09"],
         ["100", "159"],
@@ -18,10 +23,12 @@ defmodule Exisbn.Regions do
     },
     "978-9929" => %{
       "name" => "Guatemala",
+      "country_code" => "GT",
       "ranges" => [["0", "3"], ["40", "54"], ["550", "799"], ["8000", "9999"]]
     },
     "978-9958" => %{
       "name" => "Bosnia and Herzegovina",
+      "country_code" => "BA",
       "ranges" => [
         ["00", "01"],
         ["020", "029"],
@@ -35,9 +42,10 @@ defmodule Exisbn.Regions do
         ["9000", "9999"]
       ]
     },
-    "978-613" => %{"name" => "Mauritius", "ranges" => [["0", "9"]]},
+    "978-613" => %{"name" => "Mauritius", "country_code" => "MU", "ranges" => [["0", "9"]]},
     "978-955" => %{
       "name" => "Sri Lanka",
+      "country_code" => "LK",
       "ranges" => [
         ["0000", "1999"],
         ["20", "38"],
@@ -52,9 +60,14 @@ defmodule Exisbn.Regions do
         ["95000", "99999"]
       ]
     },
-    "978-99942" => %{"name" => "Sudan", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99942" => %{
+      "name" => "Sudan",
+      "country_code" => "SD",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-99906" => %{
       "name" => "Kuwait",
+      "country_code" => "KW",
       "ranges" => [
         ["0", "2"],
         ["30", "59"],
@@ -66,6 +79,7 @@ defmodule Exisbn.Regions do
     },
     "978-9974" => %{
       "name" => "Uruguay",
+      "country_code" => "UY",
       "ranges" => [
         ["0", "2"],
         ["30", "54"],
@@ -77,6 +91,7 @@ defmodule Exisbn.Regions do
     },
     "978-982" => %{
       "name" => "South Pacific",
+      "country_code" => nil,
       "ranges" => [
         ["00", "09"],
         ["100", "699"],
@@ -87,14 +102,17 @@ defmodule Exisbn.Regions do
     },
     "978-9927" => %{
       "name" => "Qatar",
+      "country_code" => "QA",
       "ranges" => [["00", "09"], ["100", "399"], ["4000", "4999"]]
     },
     "978-9948" => %{
       "name" => "United Arab Emirates",
+      "country_code" => "AE",
       "ranges" => [["00", "39"], ["400", "849"], ["8500", "9999"]]
     },
     "978-93" => %{
       "name" => "India",
+      "country_code" => "IN",
       "ranges" => [
         ["00", "09"],
         ["100", "499"],
@@ -105,6 +123,7 @@ defmodule Exisbn.Regions do
     },
     "978-612" => %{
       "name" => "Peru",
+      "country_code" => "PE",
       "ranges" => [
         ["00", "29"],
         ["300", "399"],
@@ -115,6 +134,7 @@ defmodule Exisbn.Regions do
     },
     "978-969" => %{
       "name" => "Pakistan",
+      "country_code" => "PK",
       "ranges" => [
         ["0", "1"],
         ["20", "22"],
@@ -126,18 +146,22 @@ defmodule Exisbn.Regions do
     },
     "978-9940" => %{
       "name" => "Montenegro",
+      "country_code" => "ME",
       "ranges" => [["0", "1"], ["20", "49"], ["500", "899"], ["9000", "9999"]]
     },
     "978-980" => %{
       "name" => "Venezuela",
+      "country_code" => "VE",
       "ranges" => [["00", "19"], ["200", "599"], ["6000", "9999"]]
     },
     "978-9928" => %{
       "name" => "Albania",
+      "country_code" => "AL",
       "ranges" => [["00", "09"], ["100", "399"], ["4000", "4999"]]
     },
     "978-978" => %{
       "name" => "Nigeria",
+      "country_code" => "NG",
       "ranges" => [
         ["000", "199"],
         ["2000", "2999"],
@@ -148,6 +172,7 @@ defmodule Exisbn.Regions do
     },
     "978-954" => %{
       "name" => "Bulgaria",
+      "country_code" => "BG",
       "ranges" => [
         ["00", "28"],
         ["2900", "2999"],
@@ -159,10 +184,12 @@ defmodule Exisbn.Regions do
     },
     "978-986" => %{
       "name" => "Taiwan",
+      "country_code" => "TW",
       "ranges" => [["00", "11"], ["120", "559"], ["5600", "7999"], ["80000", "99999"]]
     },
     "978-84" => %{
       "name" => "Spain",
+      "country_code" => "ES",
       "ranges" => [
         ["00", "13"],
         ["140", "149"],
@@ -178,9 +205,14 @@ defmodule Exisbn.Regions do
         ["9700", "9999"]
       ]
     },
-    "978-99936" => %{"name" => "Bhutan", "ranges" => [["0", "0"], ["10", "59"], ["600", "999"]]},
+    "978-99936" => %{
+      "name" => "Bhutan",
+      "country_code" => "BT",
+      "ranges" => [["0", "0"], ["10", "59"], ["600", "999"]]
+    },
     "978-87" => %{
       "name" => "Denmark",
+      "country_code" => "DK",
       "ranges" => [
         ["00", "29"],
         ["400", "649"],
@@ -189,9 +221,14 @@ defmodule Exisbn.Regions do
         ["970000", "999999"]
       ]
     },
-    "978-99948" => %{"name" => "Eritrea", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99948" => %{
+      "name" => "Eritrea",
+      "country_code" => "ER",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-92" => %{
       "name" => "International NGO Publishers and EU Organizations",
+      "country_code" => nil,
       "ranges" => [
         ["0", "5"],
         ["60", "79"],
@@ -203,6 +240,7 @@ defmodule Exisbn.Regions do
     },
     "978-601" => %{
       "name" => "Kazakhstan",
+      "country_code" => "KZ",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -211,13 +249,19 @@ defmodule Exisbn.Regions do
         ["85", "99"]
       ]
     },
-    "978-99915" => %{"name" => "Maldives", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99915" => %{
+      "name" => "Maldives",
+      "country_code" => "MV",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-9937" => %{
       "name" => "Nepal",
+      "country_code" => "NP",
       "ranges" => [["0", "2"], ["30", "49"], ["500", "799"], ["8000", "9999"]]
     },
     "978-975" => %{
       "name" => "Turkey",
+      "country_code" => "TR",
       "ranges" => [
         ["00000", "01999"],
         ["02", "24"],
@@ -229,14 +273,17 @@ defmodule Exisbn.Regions do
     },
     "978-99947" => %{
       "name" => "Tajikistan",
+      "country_code" => "TJ",
       "ranges" => [["0", "2"], ["30", "69"], ["700", "999"]]
     },
     "978-9935" => %{
       "name" => "Iceland",
+      "country_code" => "IS",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-85" => %{
       "name" => "Brazil",
+      "country_code" => "BR",
       "ranges" => [
         ["00", "19"],
         ["200", "549"],
@@ -253,6 +300,7 @@ defmodule Exisbn.Regions do
     },
     "978-9963" => %{
       "name" => "Cyprus",
+      "country_code" => "CY",
       "ranges" => [
         ["0", "1"],
         ["2000", "2499"],
@@ -266,10 +314,12 @@ defmodule Exisbn.Regions do
     },
     "978-9952" => %{
       "name" => "Azerbaijan",
+      "country_code" => "AZ",
       "ranges" => [["0", "1"], ["20", "39"], ["400", "799"], ["8000", "9999"]]
     },
     "978-977" => %{
       "name" => "Egypt",
+      "country_code" => "EG",
       "ranges" => [
         ["00", "19"],
         ["200", "499"],
@@ -281,10 +331,12 @@ defmodule Exisbn.Regions do
     },
     "978-9938" => %{
       "name" => "Tunisia",
+      "country_code" => "TN",
       "ranges" => [["00", "79"], ["800", "949"], ["9500", "9999"]]
     },
     "978-958" => %{
       "name" => "Colombia",
+      "country_code" => "CO",
       "ranges" => [
         ["00", "56"],
         ["57000", "59999"],
@@ -295,6 +347,7 @@ defmodule Exisbn.Regions do
     },
     "978-80" => %{
       "name" => "former Czechoslovakia",
+      "country_code" => nil,
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -303,17 +356,20 @@ defmodule Exisbn.Regions do
         ["900000", "999999"]
       ]
     },
-    "978-99902" => %{"name" => "Reserved Agency", "ranges" => []},
+    "978-99902" => %{"name" => "Reserved Agency", "country_code" => nil, "ranges" => []},
     "978-99961" => %{
       "name" => "El Salvador",
+      "country_code" => "SV",
       "ranges" => [["0", "3"], ["40", "89"], ["900", "999"]]
     },
     "978-99972" => %{
       "name" => "Faroe Islands",
+      "country_code" => "FO",
       "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]
     },
     "978-962" => %{
       "name" => "Hong Kong, China",
+      "country_code" => "HK",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -325,15 +381,22 @@ defmodule Exisbn.Regions do
     },
     "978-99959" => %{
       "name" => "Luxembourg",
+      "country_code" => "LU",
       "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]
     },
-    "978-99960" => %{"name" => "Malawi", "ranges" => [["0", "0"], ["10", "94"], ["950", "999"]]},
+    "978-99960" => %{
+      "name" => "Malawi",
+      "country_code" => "MW",
+      "ranges" => [["0", "0"], ["10", "94"], ["950", "999"]]
+    },
     "978-99922" => %{
       "name" => "Guatemala",
+      "country_code" => "GT",
       "ranges" => [["0", "3"], ["40", "69"], ["700", "999"]]
     },
     "978-82" => %{
       "name" => "Norway",
+      "country_code" => "NO",
       "ranges" => [
         ["00", "19"],
         ["200", "689"],
@@ -345,18 +408,22 @@ defmodule Exisbn.Regions do
     },
     "978-99955" => %{
       "name" => "Srpska, Republic of",
+      "country_code" => nil,
       "ranges" => [["0", "1"], ["20", "59"], ["600", "799"], ["80", "99"]]
     },
     "978-600" => %{
       "name" => "Iran",
+      "country_code" => "IR",
       "ranges" => [["00", "09"], ["100", "499"], ["5000", "8999"], ["90000", "99999"]]
     },
     "978-9988" => %{
       "name" => "Ghana",
+      "country_code" => "GH",
       "ranges" => [["0", "2"], ["30", "54"], ["550", "749"], ["7500", "9999"]]
     },
     "978-987" => %{
       "name" => "Argentina",
+      "country_code" => "AR",
       "ranges" => [
         ["00", "09"],
         ["1000", "1999"],
@@ -375,14 +442,17 @@ defmodule Exisbn.Regions do
     },
     "978-618" => %{
       "name" => "Greece",
+      "country_code" => "GR",
       "ranges" => [["00", "19"], ["200", "499"], ["5000", "7999"], ["80000", "99999"]]
     },
     "978-99966" => %{
       "name" => "Kuwait",
+      "country_code" => "KW",
       "ranges" => [["0", "2"], ["30", "69"], ["700", "799"], ["80", "94"]]
     },
     "978-603" => %{
       "name" => "Saudi Arabia",
+      "country_code" => "SA",
       "ranges" => [
         ["00", "04"],
         ["05", "49"],
@@ -393,14 +463,17 @@ defmodule Exisbn.Regions do
     },
     "978-9950" => %{
       "name" => "Palestine",
+      "country_code" => "PS",
       "ranges" => [["00", "29"], ["300", "849"], ["8500", "9999"]]
     },
     "978-9976" => %{
       "name" => "Tanzania",
+      "country_code" => "TZ",
       "ranges" => [["0", "5"], ["60", "89"], ["900", "989"], ["9900", "9999"]]
     },
     "978-91" => %{
       "name" => "Sweden",
+      "country_code" => "SE",
       "ranges" => [
         ["0", "1"],
         ["20", "49"],
@@ -410,10 +483,19 @@ defmodule Exisbn.Regions do
         ["970000", "999999"]
       ]
     },
-    "978-99920" => %{"name" => "Andorra", "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]},
-    "978-9964" => %{"name" => "Ghana", "ranges" => [["0", "6"], ["70", "94"], ["950", "999"]]},
+    "978-99920" => %{
+      "name" => "Andorra",
+      "country_code" => "AD",
+      "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]
+    },
+    "978-9964" => %{
+      "name" => "Ghana",
+      "country_code" => "GH",
+      "ranges" => [["0", "6"], ["70", "94"], ["950", "999"]]
+    },
     "978-960" => %{
       "name" => "Greece",
+      "country_code" => "GR",
       "ranges" => [
         ["00", "19"],
         ["200", "659"],
@@ -428,19 +510,27 @@ defmodule Exisbn.Regions do
     },
     "978-99918" => %{
       "name" => "Faroe Islands",
+      "country_code" => "FO",
       "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]
     },
     "978-94" => %{
       "name" => "Netherlands",
+      "country_code" => "NL",
       "ranges" => [["000", "599"], ["6000", "8999"], ["90000", "99999"]]
     },
-    "978-99957" => %{"name" => "Malta", "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]},
+    "978-99957" => %{
+      "name" => "Malta",
+      "country_code" => "MT",
+      "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
+    },
     "978-617" => %{
       "name" => "Ukraine",
+      "country_code" => "UA",
       "ranges" => [["00", "49"], ["500", "699"], ["7000", "8999"], ["90000", "99999"]]
     },
     "978-973" => %{
       "name" => "Romania",
+      "country_code" => "RO",
       "ranges" => [
         ["0", "0"],
         ["100", "169"],
@@ -453,23 +543,39 @@ defmodule Exisbn.Regions do
         ["95000", "99999"]
       ]
     },
-    "978-99937" => %{"name" => "Macau", "ranges" => [["0", "1"], ["20", "59"], ["600", "999"]]},
-    "978-99913" => %{"name" => "Andorra", "ranges" => [["0", "2"], ["30", "35"], ["600", "604"]]},
+    "978-99937" => %{
+      "name" => "Macau",
+      "country_code" => "MO",
+      "ranges" => [["0", "1"], ["20", "59"], ["600", "999"]]
+    },
+    "978-99913" => %{
+      "name" => "Andorra",
+      "country_code" => "AD",
+      "ranges" => [["0", "2"], ["30", "35"], ["600", "604"]]
+    },
     "978-99917" => %{
       "name" => "Brunei Darussalam",
+      "country_code" => "BN",
       "ranges" => [["0", "2"], ["30", "89"], ["900", "999"]]
     },
-    "978-99946" => %{"name" => "Nepal", "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]},
+    "978-99946" => %{
+      "name" => "Nepal",
+      "country_code" => "NP",
+      "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]
+    },
     "978-99938" => %{
       "name" => "Srpska, Republic of",
+      "country_code" => nil,
       "ranges" => [["0", "1"], ["20", "59"], ["600", "899"], ["90", "99"]]
     },
     "978-99949" => %{
       "name" => "Mauritius",
+      "country_code" => "MU",
       "ranges" => [["0", "1"], ["20", "89"], ["900", "999"]]
     },
     "979-12" => %{
       "name" => "Italy",
+      "country_code" => "IT",
       "ranges" => [
         ["200", "299"],
         ["5450", "5999"],
@@ -479,6 +585,7 @@ defmodule Exisbn.Regions do
     },
     "979-13" => %{
       "name" => "Spain",
+      "country_code" => "ES",
       "ranges" => [
         ["00", "00"],
         ["600", "604"],
@@ -489,6 +596,7 @@ defmodule Exisbn.Regions do
     },
     "979-8" => %{
       "name" => "United States",
+      "country_code" => "US",
       "ranges" => [
         ["1950", "1999"],
         ["200", "239"],
@@ -507,11 +615,17 @@ defmodule Exisbn.Regions do
     },
     "978-99975" => %{
       "name" => "Tajikistan",
+      "country_code" => "TJ",
       "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]
     },
-    "978-99911" => %{"name" => "Lesotho", "ranges" => [["00", "59"], ["600", "999"]]},
+    "978-99911" => %{
+      "name" => "Lesotho",
+      "country_code" => "LS",
+      "ranges" => [["00", "59"], ["600", "999"]]
+    },
     "978-1" => %{
       "name" => "English language",
+      "country_code" => nil,
       "ranges" => [
         ["00", "09"],
         ["100", "399"],
@@ -523,15 +637,22 @@ defmodule Exisbn.Regions do
     },
     "978-956" => %{
       "name" => "Chile",
+      "country_code" => "CL",
       "ranges" => [["00", "19"], ["200", "699"], ["7000", "9999"]]
     },
     "978-9949" => %{
       "name" => "Estonia",
+      "country_code" => "EE",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "749"], ["75", "89"], ["9000", "9999"]]
     },
-    "978-99950" => %{"name" => "Cambodia", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99950" => %{
+      "name" => "Cambodia",
+      "country_code" => "KH",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-9989" => %{
       "name" => "Macedonia",
+      "country_code" => "MK",
       "ranges" => [
         ["0", "0"],
         ["100", "199"],
@@ -541,9 +662,14 @@ defmodule Exisbn.Regions do
         ["9500", "9999"]
       ]
     },
-    "978-99908" => %{"name" => "Malawi", "ranges" => [["0", "0"], ["10", "89"], ["900", "999"]]},
+    "978-99908" => %{
+      "name" => "Malawi",
+      "country_code" => "MW",
+      "ranges" => [["0", "0"], ["10", "89"], ["900", "999"]]
+    },
     "978-602" => %{
       "name" => "Indonesia",
+      "country_code" => "ID",
       "ranges" => [
         ["00", "07"],
         ["0800", "0899"],
@@ -564,25 +690,49 @@ defmodule Exisbn.Regions do
         ["95000", "99999"]
       ]
     },
-    "978-99974" => %{"name" => "Bolivia", "ranges" => [["40", "79"], ["800", "999"]]},
-    "978-99977" => %{"name" => "Rwanda", "ranges" => [["0", "1"], ["40", "69"], ["700", "799"]]},
+    "978-99974" => %{
+      "name" => "Bolivia",
+      "country_code" => "BO",
+      "ranges" => [["40", "79"], ["800", "999"]]
+    },
+    "978-99977" => %{
+      "name" => "Rwanda",
+      "country_code" => "RW",
+      "ranges" => [["0", "1"], ["40", "69"], ["700", "799"]]
+    },
     "978-99923" => %{
       "name" => "El Salvador",
+      "country_code" => "SV",
       "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
     },
     "978-99931" => %{
       "name" => "Seychelles",
+      "country_code" => "SC",
       "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
     },
-    "978-99940" => %{"name" => "Georgia", "ranges" => [["0", "0"], ["10", "69"], ["700", "999"]]},
+    "978-99940" => %{
+      "name" => "Georgia",
+      "country_code" => "GE",
+      "ranges" => [["0", "0"], ["10", "69"], ["700", "999"]]
+    },
     "978-99912" => %{
       "name" => "Botswana",
+      "country_code" => "BW",
       "ranges" => [["0", "3"], ["400", "599"], ["60", "89"], ["900", "999"]]
     },
-    "978-99929" => %{"name" => "Mongolia", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
-    "978-99909" => %{"name" => "Malta", "ranges" => [["0", "3"], ["40", "94"], ["950", "999"]]},
+    "978-99929" => %{
+      "name" => "Mongolia",
+      "country_code" => "MN",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
+    "978-99909" => %{
+      "name" => "Malta",
+      "country_code" => "MT",
+      "ranges" => [["0", "3"], ["40", "94"], ["950", "999"]]
+    },
     "978-9957" => %{
       "name" => "Jordan",
+      "country_code" => "JO",
       "ranges" => [
         ["00", "39"],
         ["400", "649"],
@@ -594,26 +744,32 @@ defmodule Exisbn.Regions do
     },
     "978-9983" => %{
       "name" => "Gambia",
+      "country_code" => "GM",
       "ranges" => [["80", "94"], ["950", "989"], ["9900", "9999"]]
     },
     "978-9961" => %{
       "name" => "Algeria",
+      "country_code" => "DZ",
       "ranges" => [["0", "2"], ["30", "69"], ["700", "949"], ["9500", "9999"]]
     },
     "978-9953" => %{
       "name" => "Lebanon",
+      "country_code" => "LB",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "599"], ["60", "89"], ["9000", "9999"]]
     },
     "978-99921" => %{
       "name" => "Qatar",
+      "country_code" => "QA",
       "ranges" => [["0", "1"], ["20", "69"], ["700", "799"], ["8", "8"], ["90", "99"]]
     },
     "978-607" => %{
       "name" => "Mexico",
+      "country_code" => "MX",
       "ranges" => [["00", "39"], ["400", "749"], ["7500", "9499"], ["95000", "99999"]]
     },
     "978-957" => %{
       "name" => "Taiwan",
+      "country_code" => "TW",
       "ranges" => [
         ["00", "02"],
         ["0300", "0499"],
@@ -627,9 +783,14 @@ defmodule Exisbn.Regions do
         ["97000", "99999"]
       ]
     },
-    "978-99943" => %{"name" => "Albania", "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]},
+    "978-99943" => %{
+      "name" => "Albania",
+      "country_code" => "AL",
+      "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]
+    },
     "978-9972" => %{
       "name" => "Peru",
+      "country_code" => "PE",
       "ranges" => [
         ["00", "09"],
         ["1", "1"],
@@ -642,6 +803,7 @@ defmodule Exisbn.Regions do
     },
     "978-0" => %{
       "name" => "English language",
+      "country_code" => nil,
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -653,6 +815,7 @@ defmodule Exisbn.Regions do
     },
     "978-9975" => %{
       "name" => "Moldova",
+      "country_code" => "MD",
       "ranges" => [
         ["0", "0"],
         ["100", "299"],
@@ -665,26 +828,32 @@ defmodule Exisbn.Regions do
     },
     "978-972" => %{
       "name" => "Portugal",
+      "country_code" => "PT",
       "ranges" => [["0", "1"], ["20", "54"], ["550", "799"], ["8000", "9499"], ["95000", "99999"]]
     },
     "978-616" => %{
       "name" => "Thailand",
+      "country_code" => "TH",
       "ranges" => [["00", "19"], ["200", "699"], ["7000", "8999"], ["90000", "99999"]]
     },
     "978-976" => %{
       "name" => "Caribbean Community",
+      "country_code" => nil,
       "ranges" => [["0", "3"], ["40", "59"], ["600", "799"], ["8000", "9499"], ["95000", "99999"]]
     },
     "978-99954" => %{
       "name" => "Bolivia",
+      "country_code" => "BO",
       "ranges" => [["0", "2"], ["30", "69"], ["700", "879"], ["88", "99"]]
     },
     "978-9985" => %{
       "name" => "Estonia",
+      "country_code" => "EE",
       "ranges" => [["0", "4"], ["50", "79"], ["800", "899"], ["9000", "9999"]]
     },
     "978-606" => %{
       "name" => "Romania",
+      "country_code" => "RO",
       "ranges" => [
         ["0", "0"],
         ["10", "49"],
@@ -697,14 +866,17 @@ defmodule Exisbn.Regions do
     },
     "978-9924" => %{
       "name" => "Cambodia",
+      "country_code" => "KH",
       "ranges" => [["30", "39"], ["500", "649"], ["9000", "9999"]]
     },
     "978-9925" => %{
       "name" => "Cyprus",
+      "country_code" => "CY",
       "ranges" => [["0", "2"], ["30", "54"], ["550", "734"], ["7350", "9999"]]
     },
     "978-608" => %{
       "name" => "Macedonia",
+      "country_code" => "MK",
       "ranges" => [
         ["0", "0"],
         ["10", "19"],
@@ -716,6 +888,7 @@ defmodule Exisbn.Regions do
     },
     "978-981" => %{
       "name" => "Singapore",
+      "country_code" => "SG",
       "ranges" => [
         ["00", "16"],
         ["17000", "19999"],
@@ -727,10 +900,12 @@ defmodule Exisbn.Regions do
     },
     "978-9955" => %{
       "name" => "Lithuania",
+      "country_code" => "LT",
       "ranges" => [["00", "39"], ["400", "929"], ["9300", "9999"]]
     },
     "978-964" => %{
       "name" => "Iran",
+      "country_code" => "IR",
       "ranges" => [
         ["00", "14"],
         ["150", "249"],
@@ -744,10 +919,12 @@ defmodule Exisbn.Regions do
     },
     "978-9956" => %{
       "name" => "Cameroon",
+      "country_code" => "CM",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-9959" => %{
       "name" => "Libya",
+      "country_code" => "LY",
       "ranges" => [
         ["0", "1"],
         ["20", "79"],
@@ -757,25 +934,45 @@ defmodule Exisbn.Regions do
         ["98", "99"]
       ]
     },
-    "978-99927" => %{"name" => "Albania", "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]},
+    "978-99927" => %{
+      "name" => "Albania",
+      "country_code" => "AL",
+      "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]
+    },
     "978-99924" => %{
       "name" => "Nicaragua",
+      "country_code" => "NI",
       "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
     },
     "978-989" => %{
       "name" => "Portugal",
+      "country_code" => "PT",
       "ranges" => [["0", "1"], ["20", "54"], ["550", "799"], ["8000", "9499"], ["95000", "99999"]]
     },
-    "978-99941" => %{"name" => "Armenia", "ranges" => [["0", "2"], ["30", "79"], ["800", "999"]]},
-    "978-99951" => %{"name" => "Reserved Agency", "ranges" => []},
-    "978-99952" => %{"name" => "Mali", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99941" => %{
+      "name" => "Armenia",
+      "country_code" => "AM",
+      "ranges" => [["0", "2"], ["30", "79"], ["800", "999"]]
+    },
+    "978-99951" => %{"name" => "Reserved Agency", "country_code" => nil, "ranges" => []},
+    "978-99952" => %{
+      "name" => "Mali",
+      "country_code" => "ML",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-9951" => %{
       "name" => "Kosova",
+      "country_code" => nil,
       "ranges" => [["00", "39"], ["400", "849"], ["8500", "9999"]]
     },
-    "978-99916" => %{"name" => "Namibia", "ranges" => [["0", "2"], ["30", "69"], ["700", "999"]]},
+    "978-99916" => %{
+      "name" => "Namibia",
+      "country_code" => "NA",
+      "ranges" => [["0", "2"], ["30", "69"], ["700", "999"]]
+    },
     "978-88" => %{
       "name" => "Italy",
+      "country_code" => "IT",
       "ranges" => [
         ["00", "19"],
         ["200", "599"],
@@ -790,19 +987,27 @@ defmodule Exisbn.Regions do
     },
     "978-9954" => %{
       "name" => "Morocco",
+      "country_code" => "MA",
       "ranges" => [["0", "1"], ["20", "39"], ["400", "799"], ["8000", "9999"]]
     },
     "978-99904" => %{
-      "name" => "Cura\u00e7ao",
+      "name" => "Curaçao",
+      "country_code" => "CW",
       "ranges" => [["0", "5"], ["60", "89"], ["900", "999"]]
     },
     "978-9987" => %{
       "name" => "Tanzania",
+      "country_code" => "TZ",
       "ranges" => [["00", "39"], ["400", "879"], ["8800", "9999"]]
     },
-    "978-99962" => %{"name" => "Mongolia", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99962" => %{
+      "name" => "Mongolia",
+      "country_code" => "MN",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-963" => %{
       "name" => "Hungary",
+      "country_code" => "HU",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -813,6 +1018,7 @@ defmodule Exisbn.Regions do
     },
     "979-11" => %{
       "name" => "Korea, Republic",
+      "country_code" => "KR",
       "ranges" => [
         ["00", "23"],
         ["24000", "24999"],
@@ -824,10 +1030,12 @@ defmodule Exisbn.Regions do
     },
     "978-615" => %{
       "name" => "Hungary",
+      "country_code" => "HU",
       "ranges" => [["00", "09"], ["100", "499"], ["5000", "7999"], ["80000", "89999"]]
     },
     "978-9973" => %{
       "name" => "Tunisia",
+      "country_code" => "TN",
       "ranges" => [
         ["00", "05"],
         ["060", "089"],
@@ -839,6 +1047,7 @@ defmodule Exisbn.Regions do
     },
     "978-9979" => %{
       "name" => "Iceland",
+      "country_code" => "IS",
       "ranges" => [
         ["0", "4"],
         ["50", "64"],
@@ -848,9 +1057,14 @@ defmodule Exisbn.Regions do
         ["9000", "9999"]
       ]
     },
-    "978-99945" => %{"name" => "Namibia", "ranges" => [["0", "5"], ["60", "89"], ["900", "999"]]},
+    "978-99945" => %{
+      "name" => "Namibia",
+      "country_code" => "NA",
+      "ranges" => [["0", "5"], ["60", "89"], ["900", "999"]]
+    },
     "978-974" => %{
       "name" => "Thailand",
+      "country_code" => "TH",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -860,14 +1074,24 @@ defmodule Exisbn.Regions do
         ["9500", "9999"]
       ]
     },
-    "978-99905" => %{"name" => "Bolivia", "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]},
-    "978-99971" => %{"name" => "Myanmar", "ranges" => [["0", "5"], ["60", "84"], ["850", "999"]]},
+    "978-99905" => %{
+      "name" => "Bolivia",
+      "country_code" => "BO",
+      "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]
+    },
+    "978-99971" => %{
+      "name" => "Myanmar",
+      "country_code" => "MM",
+      "ranges" => [["0", "5"], ["60", "84"], ["850", "999"]]
+    },
     "978-99926" => %{
       "name" => "Honduras",
+      "country_code" => "HN",
       "ranges" => [["0", "0"], ["10", "59"], ["600", "869"], ["87", "89"], ["90", "99"]]
     },
     "978-953" => %{
       "name" => "Croatia",
+      "country_code" => "HR",
       "ranges" => [
         ["0", "0"],
         ["10", "14"],
@@ -880,6 +1104,7 @@ defmodule Exisbn.Regions do
     },
     "978-3" => %{
       "name" => "German language",
+      "country_code" => nil,
       "ranges" => [
         ["00", "02"],
         ["030", "033"],
@@ -899,6 +1124,7 @@ defmodule Exisbn.Regions do
     },
     "978-9966" => %{
       "name" => "Kenya",
+      "country_code" => "KE",
       "ranges" => [
         ["000", "149"],
         ["1500", "1999"],
@@ -910,14 +1136,17 @@ defmodule Exisbn.Regions do
     },
     "978-9946" => %{
       "name" => "Korea, P.D.R.",
+      "country_code" => "KP",
       "ranges" => [["0", "1"], ["20", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-99956" => %{
       "name" => "Albania",
+      "country_code" => "AL",
       "ranges" => [["00", "59"], ["600", "859"], ["86", "99"]]
     },
     "978-89" => %{
       "name" => "Korea, Republic",
+      "country_code" => "KR",
       "ranges" => [
         ["00", "24"],
         ["250", "549"],
@@ -930,14 +1159,17 @@ defmodule Exisbn.Regions do
     },
     "978-619" => %{
       "name" => "Bulgaria",
+      "country_code" => "BG",
       "ranges" => [["00", "14"], ["150", "699"], ["7000", "8999"], ["90000", "99999"]]
     },
     "978-9926" => %{
       "name" => "Bosnia and Herzegovina",
+      "country_code" => "BA",
       "ranges" => [["0", "1"], ["20", "39"], ["400", "799"], ["8000", "9999"]]
     },
     "978-983" => %{
       "name" => "Malaysia",
+      "country_code" => "MY",
       "ranges" => [
         ["00", "01"],
         ["020", "199"],
@@ -952,6 +1184,7 @@ defmodule Exisbn.Regions do
     },
     "978-966" => %{
       "name" => "Ukraine",
+      "country_code" => "UA",
       "ranges" => [
         ["00", "12"],
         ["130", "139"],
@@ -969,27 +1202,44 @@ defmodule Exisbn.Regions do
         ["980", "999"]
       ]
     },
-    "978-99969" => %{"name" => "Oman", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99969" => %{
+      "name" => "Oman",
+      "country_code" => "OM",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-9942" => %{
       "name" => "Ecuador",
+      "country_code" => "EC",
       "ranges" => [["00", "84"], ["8500", "8999"], ["900", "984"], ["9850", "9999"]]
     },
     "978-9977" => %{
       "name" => "Costa Rica",
+      "country_code" => "CR",
       "ranges" => [["00", "89"], ["900", "989"], ["9900", "9999"]]
     },
-    "978-99944" => %{"name" => "Ethiopia", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99944" => %{
+      "name" => "Ethiopia",
+      "country_code" => "ET",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-99934" => %{
       "name" => "Dominican Republic",
+      "country_code" => "DO",
       "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
     },
     "978-99963" => %{
       "name" => "Cambodia",
+      "country_code" => "KH",
       "ranges" => [["00", "49"], ["500", "919"], ["92", "99"]]
     },
-    "978-9947" => %{"name" => "Algeria", "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]},
+    "978-9947" => %{
+      "name" => "Algeria",
+      "country_code" => "DZ",
+      "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
+    },
     "978-86" => %{
       "name" => "former Yugoslavia",
+      "country_code" => nil,
       "ranges" => [
         ["00", "29"],
         ["300", "599"],
@@ -998,67 +1248,94 @@ defmodule Exisbn.Regions do
         ["900000", "999999"]
       ]
     },
-    "978-99933" => %{"name" => "Nepal", "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]},
+    "978-99933" => %{
+      "name" => "Nepal",
+      "country_code" => "NP",
+      "ranges" => [["0", "2"], ["30", "59"], ["600", "999"]]
+    },
     "978-9965" => %{
       "name" => "Kazakhstan",
+      "country_code" => "KZ",
       "ranges" => [["00", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-99903" => %{
       "name" => "Mauritius",
+      "country_code" => "MU",
       "ranges" => [["0", "1"], ["20", "89"], ["900", "999"]]
     },
     "978-9931" => %{
       "name" => "Algeria",
+      "country_code" => "DZ",
       "ranges" => [["00", "29"], ["300", "899"], ["9000", "9999"]]
     },
     "978-99976" => %{
       "name" => "Srpska, Republic of",
+      "country_code" => nil,
       "ranges" => [["0", "1"], ["20", "59"], ["600", "799"]]
     },
     "978-959" => %{
       "name" => "Cuba",
+      "country_code" => "CU",
       "ranges" => [["00", "19"], ["200", "699"], ["7000", "8499"], ["85000", "99999"]]
     },
     "978-9930" => %{
       "name" => "Costa Rica",
+      "country_code" => "CR",
       "ranges" => [["00", "49"], ["500", "939"], ["9400", "9999"]]
     },
     "978-9982" => %{
       "name" => "Zambia",
+      "country_code" => "ZM",
       "ranges" => [["00", "79"], ["800", "989"], ["9900", "9999"]]
     },
     "978-984" => %{
       "name" => "Bangladesh",
+      "country_code" => "BD",
       "ranges" => [["00", "39"], ["400", "799"], ["8000", "8999"], ["90000", "99999"]]
     },
-    "978-99930" => %{"name" => "Armenia", "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]},
+    "978-99930" => %{
+      "name" => "Armenia",
+      "country_code" => "AM",
+      "ranges" => [["0", "4"], ["50", "79"], ["800", "999"]]
+    },
     "978-99901" => %{
       "name" => "Bahrain",
+      "country_code" => "BH",
       "ranges" => [["00", "49"], ["500", "799"], ["80", "99"]]
     },
     "978-9968" => %{
       "name" => "Costa Rica",
+      "country_code" => "CR",
       "ranges" => [["00", "49"], ["500", "939"], ["9400", "9999"]]
     },
     "978-609" => %{
       "name" => "Lithuania",
+      "country_code" => "LT",
       "ranges" => [["00", "39"], ["400", "799"], ["8000", "9499"], ["95000", "99999"]]
     },
-    "978-99925" => %{"name" => "Paraguay", "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]},
+    "978-99925" => %{
+      "name" => "Paraguay",
+      "country_code" => "PY",
+      "ranges" => [["0", "3"], ["40", "79"], ["800", "999"]]
+    },
     "978-9941" => %{
       "name" => "Georgia",
+      "country_code" => "GE",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-9986" => %{
       "name" => "Lithuania",
+      "country_code" => "LT",
       "ranges" => [["00", "39"], ["400", "899"], ["9000", "9399"], ["940", "969"], ["97", "99"]]
     },
     "978-9960" => %{
       "name" => "Saudi Arabia",
+      "country_code" => "SA",
       "ranges" => [["00", "59"], ["600", "899"], ["9000", "9999"]]
     },
     "978-81" => %{
       "name" => "India",
+      "country_code" => "IN",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -1067,9 +1344,14 @@ defmodule Exisbn.Regions do
         ["900000", "999999"]
       ]
     },
-    "978-99970" => %{"name" => "Haiti", "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]},
+    "978-99970" => %{
+      "name" => "Haiti",
+      "country_code" => "HT",
+      "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]
+    },
     "978-7" => %{
       "name" => "China, People's Republic",
+      "country_code" => "CN",
       "ranges" => [
         ["00", "09"],
         ["100", "499"],
@@ -1080,6 +1362,7 @@ defmodule Exisbn.Regions do
     },
     "978-967" => %{
       "name" => "Malaysia",
+      "country_code" => "MY",
       "ranges" => [
         ["00", "00"],
         ["0100", "0999"],
@@ -1095,10 +1378,12 @@ defmodule Exisbn.Regions do
     },
     "978-99910" => %{
       "name" => "Sierra Leone",
+      "country_code" => "SL",
       "ranges" => [["0", "2"], ["30", "89"], ["900", "999"]]
     },
     "978-9945" => %{
       "name" => "Dominican Republic",
+      "country_code" => "DO",
       "ranges" => [
         ["00", "00"],
         ["010", "079"],
@@ -1111,6 +1396,7 @@ defmodule Exisbn.Regions do
     },
     "978-979" => %{
       "name" => "Indonesia",
+      "country_code" => "ID",
       "ranges" => [
         ["000", "099"],
         ["1000", "1499"],
@@ -1122,14 +1408,24 @@ defmodule Exisbn.Regions do
         ["95000", "99999"]
       ]
     },
-    "978-99965" => %{"name" => "Macau", "ranges" => [["0", "3"], ["40", "62"], ["630", "999"]]},
-    "978-99914" => %{"name" => "Suriname", "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]},
+    "978-99965" => %{
+      "name" => "Macau",
+      "country_code" => "MO",
+      "ranges" => [["0", "3"], ["40", "62"], ["630", "999"]]
+    },
+    "978-99914" => %{
+      "name" => "Suriname",
+      "country_code" => "SR",
+      "ranges" => [["0", "4"], ["50", "89"], ["900", "999"]]
+    },
     "978-9980" => %{
       "name" => "Papua New Guinea",
+      "country_code" => "PG",
       "ranges" => [["0", "3"], ["40", "89"], ["900", "989"], ["9900", "9999"]]
     },
     "978-99919" => %{
       "name" => "Benin",
+      "country_code" => "BJ",
       "ranges" => [
         ["0", "2"],
         ["300", "399"],
@@ -1142,10 +1438,12 @@ defmodule Exisbn.Regions do
     },
     "978-9962" => %{
       "name" => "Panama",
+      "country_code" => "PA",
       "ranges" => [["00", "54"], ["5500", "5599"], ["56", "59"], ["600", "849"], ["8500", "9999"]]
     },
     "978-968" => %{
       "name" => "Mexico",
+      "country_code" => "MX",
       "ranges" => [
         ["01", "39"],
         ["400", "499"],
@@ -1156,30 +1454,37 @@ defmodule Exisbn.Regions do
     },
     "978-9984" => %{
       "name" => "Latvia",
+      "country_code" => "LV",
       "ranges" => [["00", "49"], ["500", "899"], ["9000", "9999"]]
     },
     "978-99964" => %{
       "name" => "Nicaragua",
+      "country_code" => "NI",
       "ranges" => [["0", "1"], ["20", "79"], ["800", "999"]]
     },
     "978-621" => %{
       "name" => "Philippines",
+      "country_code" => "PH",
       "ranges" => [["00", "29"], ["400", "599"], ["8000", "8999"], ["95000", "99999"]]
     },
     "978-9932" => %{
       "name" => "Lao People's Democratic Republic",
+      "country_code" => "LA",
       "ranges" => [["00", "39"], ["400", "849"], ["8500", "9999"]]
     },
     "978-9939" => %{
       "name" => "Armenia",
+      "country_code" => "AM",
       "ranges" => [["0", "4"], ["50", "79"], ["800", "899"], ["9000", "9999"]]
     },
     "978-99968" => %{
       "name" => "Botswana",
+      "country_code" => "BW",
       "ranges" => [["0", "3"], ["400", "599"], ["60", "89"], ["900", "999"]]
     },
     "978-90" => %{
       "name" => "Netherlands",
+      "country_code" => "NL",
       "ranges" => [
         ["00", "19"],
         ["200", "499"],
@@ -1191,25 +1496,30 @@ defmodule Exisbn.Regions do
         ["94", "94"]
       ]
     },
-    "978-620" => %{"name" => "Mauritius", "ranges" => [["0", "9"]]},
+    "978-620" => %{"name" => "Mauritius", "country_code" => "MU", "ranges" => [["0", "9"]]},
     "978-9971" => %{
       "name" => "Singapore",
+      "country_code" => "SG",
       "ranges" => [["0", "5"], ["60", "89"], ["900", "989"], ["9900", "9999"]]
     },
     "978-99932" => %{
       "name" => "Malta",
+      "country_code" => "MT",
       "ranges" => [["0", "0"], ["10", "59"], ["600", "699"], ["7", "7"], ["80", "99"]]
     },
     "978-9967" => %{
       "name" => "Kyrgyz Republic",
+      "country_code" => "KG",
       "ranges" => [["00", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-985" => %{
       "name" => "Belarus",
+      "country_code" => "BY",
       "ranges" => [["00", "39"], ["400", "599"], ["6000", "8999"], ["90000", "99999"]]
     },
     "979-10" => %{
       "name" => "France",
+      "country_code" => "FR",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -1220,14 +1530,17 @@ defmodule Exisbn.Regions do
     },
     "978-99958" => %{
       "name" => "Bahrain",
+      "country_code" => "BH",
       "ranges" => [["0", "4"], ["50", "93"], ["940", "949"], ["950", "999"]]
     },
     "978-9934" => %{
       "name" => "Latvia",
+      "country_code" => "LV",
       "ranges" => [["0", "0"], ["10", "49"], ["500", "799"], ["8000", "9999"]]
     },
     "978-4" => %{
       "name" => "Japan",
+      "country_code" => "JP",
       "ranges" => [
         ["00", "19"],
         ["200", "699"],
@@ -1239,23 +1552,28 @@ defmodule Exisbn.Regions do
     },
     "978-9943" => %{
       "name" => "Uzbekistan",
+      "country_code" => "UZ",
       "ranges" => [["00", "29"], ["300", "399"], ["4000", "9749"], ["975", "999"]]
     },
     "978-950" => %{
       "name" => "Argentina",
+      "country_code" => "AR",
       "ranges" => [["00", "49"], ["500", "899"], ["9000", "9899"], ["99000", "99999"]]
     },
-    "978-611" => %{"name" => "Thailand", "ranges" => []},
+    "978-611" => %{"name" => "Thailand", "country_code" => "TH", "ranges" => []},
     "978-961" => %{
       "name" => "Slovenia",
+      "country_code" => "SI",
       "ranges" => [["00", "19"], ["200", "599"], ["6000", "8999"], ["90000", "94999"]]
     },
     "978-9933" => %{
       "name" => "Syria",
+      "country_code" => "SY",
       "ranges" => [["0", "0"], ["10", "39"], ["400", "899"], ["9000", "9999"]]
     },
     "978-605" => %{
       "name" => "Turkey",
+      "country_code" => "TR",
       "ranges" => [
         ["01", "02"],
         ["030", "039"],
@@ -1268,6 +1586,7 @@ defmodule Exisbn.Regions do
     },
     "978-988" => %{
       "name" => "Hong Kong, China",
+      "country_code" => "HK",
       "ranges" => [
         ["00", "11"],
         ["12000", "14999"],
@@ -1281,23 +1600,32 @@ defmodule Exisbn.Regions do
     },
     "978-614" => %{
       "name" => "Lebanon",
+      "country_code" => "LB",
       "ranges" => [["00", "39"], ["400", "799"], ["8000", "9499"], ["95000", "99999"]]
     },
     "978-9970" => %{
       "name" => "Uganda",
+      "country_code" => "UG",
       "ranges" => [["00", "39"], ["400", "899"], ["9000", "9999"]]
     },
-    "978-99928" => %{"name" => "Georgia", "ranges" => [["0", "0"], ["10", "79"], ["800", "999"]]},
+    "978-99928" => %{
+      "name" => "Georgia",
+      "country_code" => "GE",
+      "ranges" => [["0", "0"], ["10", "79"], ["800", "999"]]
+    },
     "978-9936" => %{
       "name" => "Afghanistan",
+      "country_code" => "AF",
       "ranges" => [["0", "1"], ["20", "39"], ["400", "799"], ["8000", "9999"]]
     },
     "978-604" => %{
       "name" => "Vietnam",
+      "country_code" => "VN",
       "ranges" => [["0", "4"], ["50", "89"], ["900", "979"], ["9800", "9999"]]
     },
     "978-2" => %{
       "name" => "French language",
+      "country_code" => nil,
       "ranges" => [
         ["00", "19"],
         ["200", "349"],
@@ -1311,6 +1639,7 @@ defmodule Exisbn.Regions do
     },
     "978-9944" => %{
       "name" => "Turkey",
+      "country_code" => "TR",
       "ranges" => [
         ["0000", "0999"],
         ["100", "499"],
@@ -1323,10 +1652,12 @@ defmodule Exisbn.Regions do
     },
     "978-951" => %{
       "name" => "Finland",
+      "country_code" => "FI",
       "ranges" => [["0", "1"], ["20", "54"], ["550", "889"], ["8900", "9499"], ["95000", "99999"]]
     },
     "978-952" => %{
       "name" => "Finland",
+      "country_code" => "FI",
       "ranges" => [
         ["00", "19"],
         ["200", "499"],
@@ -1342,6 +1673,7 @@ defmodule Exisbn.Regions do
     },
     "978-971" => %{
       "name" => "Philippines",
+      "country_code" => "PH",
       "ranges" => [
         ["000", "015"],
         ["0160", "0199"],
@@ -1358,6 +1690,7 @@ defmodule Exisbn.Regions do
     },
     "978-970" => %{
       "name" => "Mexico",
+      "country_code" => "MX",
       "ranges" => [
         ["01", "59"],
         ["600", "899"],
@@ -1368,15 +1701,22 @@ defmodule Exisbn.Regions do
     },
     "978-99953" => %{
       "name" => "Paraguay",
+      "country_code" => "PY",
       "ranges" => [["0", "2"], ["30", "79"], ["800", "939"], ["94", "99"]]
     },
     "978-99935" => %{
       "name" => "Haiti",
+      "country_code" => "HT",
       "ranges" => [["0", "2"], ["30", "59"], ["600", "699"], ["7", "8"], ["90", "99"]]
     },
-    "978-99967" => %{"name" => "Paraguay", "ranges" => [["0", "1"], ["20", "59"], ["600", "899"]]},
+    "978-99967" => %{
+      "name" => "Paraguay",
+      "country_code" => "PY",
+      "ranges" => [["0", "1"], ["20", "59"], ["600", "899"]]
+    },
     "978-83" => %{
       "name" => "Poland",
+      "country_code" => "PL",
       "ranges" => [
         ["00", "19"],
         ["200", "599"],
@@ -1388,10 +1728,12 @@ defmodule Exisbn.Regions do
     },
     "978-99939" => %{
       "name" => "Guatemala",
+      "country_code" => "GT",
       "ranges" => [["0", "5"], ["60", "89"], ["900", "999"]]
     },
     "978-5" => %{
       "name" => "former U.S.S.R",
+      "country_code" => nil,
       "ranges" => [
         ["00000", "00499"],
         ["0050", "0099"],
@@ -1418,10 +1760,12 @@ defmodule Exisbn.Regions do
     },
     "978-9978" => %{
       "name" => "Ecuador",
+      "country_code" => "EC",
       "ranges" => [["00", "29"], ["300", "399"], ["40", "94"], ["950", "989"], ["9900", "9999"]]
     },
     "978-965" => %{
       "name" => "Israel",
+      "country_code" => "IL",
       "ranges" => [["00", "19"], ["200", "599"], ["7000", "7999"], ["90000", "99999"]]
     }
   }
