@@ -51,6 +51,33 @@ defmodule ExisbnTest do
     end
   end
 
+  test "valid? accepts lowercase x as check digit" do
+    assert Exisbn.valid?("887385107x")
+  end
+
+  test "fetch_checkdigit returns uppercase X for lowercase x input" do
+    assert {:ok, "X"} = Exisbn.fetch_checkdigit("887385107x")
+  end
+
+  test "isbn10_to_13 accepts lowercase x check digit" do
+    assert {:ok, _} = Exisbn.isbn10_to_13("887385107x")
+  end
+
+  test "fetch_body correctness via fetch_registrant_element and fetch_publication_element" do
+    assert {:ok, "359"} = Exisbn.fetch_registrant_element("9788535902778")
+    assert {:ok, "0277"} = Exisbn.fetch_publication_element("9788535902778")
+    assert {:ok, "86197"} = Exisbn.fetch_registrant_element("978-1-86197-876-9")
+    assert {:ok, "876"} = Exisbn.fetch_publication_element("978-1-86197-876-9")
+  end
+
+  test "fetch_registrant_element returns :unknown_publisher (not :invalid_isbn) when ranges non-empty but no match" do
+    # 978-611 Thailand has empty ranges — tests the Enum.empty? guard
+    assert {:error, :unknown_publisher} = Exisbn.fetch_registrant_element("9786110000000")
+
+    # Both code paths (empty ranges and no-range-match) must return :unknown_publisher, not :invalid_isbn
+    refute {:error, :invalid_isbn} == Exisbn.fetch_registrant_element("9786110000000")
+  end
+
   test "979-8 US hyphenation" do
     assert {:ok, "979-8-89303-135-5"} = Exisbn.hyphenate("9798893031355")
   end

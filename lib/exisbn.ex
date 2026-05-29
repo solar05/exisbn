@@ -421,6 +421,29 @@ defmodule Exisbn do
   end
 
   @doc """
+  Same as `fetch_prefix/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.fetch_prefix!("9788535902778")
+      "978-85"
+      iex> Exisbn.fetch_prefix!("2-1234-5680-2")
+      "978-2"
+      iex> Exisbn.fetch_prefix!("str")
+      ** (ArgumentError) Invalid ISBN
+
+      iex> Exisbn.fetch_prefix!("9799012345674")
+      ** (ArgumentError) Invalid ISBN
+  """
+  @spec fetch_prefix!(String.t()) :: String.t()
+  def fetch_prefix!(isbn) when is_bitstring(isbn) do
+    case fetch_prefix(isbn) do
+      {:ok, prefix} -> prefix
+      {:error, _} -> raise(ArgumentError, "Invalid ISBN")
+    end
+  end
+
+  @doc """
   Takes an ISBN and returns its checkdigit.
 
   ## Examples
@@ -437,7 +460,7 @@ defmodule Exisbn do
   @spec fetch_checkdigit(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
   def fetch_checkdigit(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      {:ok, String.last(isbn)}
+      {:ok, isbn |> normalize() |> String.last()}
     else
       {:error, :invalid_isbn}
     end
@@ -460,7 +483,7 @@ defmodule Exisbn do
   @spec fetch_checkdigit!(String.t()) :: String.t()
   def fetch_checkdigit!(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
-      String.last(isbn)
+      isbn |> normalize() |> String.last()
     else
       raise(ArgumentError, "Invalid ISBN")
     end
@@ -510,7 +533,7 @@ defmodule Exisbn do
 
             if beg <= area && area <= ending,
               do: {:halt, {:ok, range_part}},
-              else: {:cont, {:error, :invalid_isbn}}
+              else: {:cont, {:error, :unknown_publisher}}
           end)
         end
       end
@@ -742,6 +765,7 @@ defmodule Exisbn do
 
   defp normalize(isbn) do
     isbn
+    |> String.upcase()
     |> String.split("", trim: true)
     |> Enum.filter(fn ch -> digit?(ch) || ch == "X" end)
     |> Enum.join()
@@ -795,9 +819,7 @@ defmodule Exisbn do
   defp fetch_body(isbn, prefix) do
     isbn
     |> drop_chars(String.length(prefix) - 1)
-    |> String.reverse()
-    |> drop_chars(1)
-    |> String.reverse()
+    |> String.slice(0..-2//1)
   end
 
   defp fetch_info(isbn) do

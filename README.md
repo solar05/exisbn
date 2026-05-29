@@ -184,14 +184,19 @@ Exisbn.hyphenate!("0306406152")            # => "0-306-40615-2"
 
 ### Metadata Extraction Functions
 
-#### `fetch_prefix(isbn)` — Get ISBN prefix (group identifier)
+#### `fetch_prefix(isbn)` / `fetch_prefix!(isbn)` — Get ISBN prefix (group identifier)
 
 Returns the ISBN prefix including group identifier (e.g., `978-85` for Brazil).
 
 ```elixir
+# Standard form
 Exisbn.fetch_prefix("9788535902778")       # => {:ok, "978-85"}
 Exisbn.fetch_prefix("2-1234-5680-2")       # => {:ok, "978-2"}
 Exisbn.fetch_prefix("str")                 # => {:error, :invalid_isbn}
+
+# Bang form
+Exisbn.fetch_prefix!("9788535902778")      # => "978-85"
+Exisbn.fetch_prefix!("str")               # ** (ArgumentError) Invalid ISBN
 ```
 
 #### `publisher_zone(isbn)` / `publisher_zone!(isbn)` — Get publisher zone/country
@@ -288,10 +293,11 @@ Exisbn.valid?("978 85 359 0277 8")         # => true
 
 # ISBN-10 with check digit X
 Exisbn.valid?("887385107X")                # => true (uppercase X)
-Exisbn.valid?("887385107x")                # => true (lowercase x is converted)
+Exisbn.valid?("887385107x")                # => true (lowercase x is normalized to X)
 ```
 
-The library internally normalizes input by extracting digits and the `X` check digit character, so ISBNs with or without hyphens, spaces, or mixed case `X` are accepted.
+The library normalizes input by upcasing, then extracting digits and the `X` check digit character.
+ISBNs with or without hyphens, spaces, or lowercase `x` are accepted.
 
 ## ISBN Specifications
 
