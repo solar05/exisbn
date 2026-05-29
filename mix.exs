@@ -11,7 +11,8 @@ defmodule Exisbn.MixProject do
       package: package(),
       name: "Exisbn",
       deps: deps(),
-      source_url: "https://github.com/solar05/exisbn"
+      source_url: "https://github.com/solar05/exisbn",
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -22,12 +23,25 @@ defmodule Exisbn.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.cobertura": :test
+      ]
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test, runtime: false}
     ]
   end
 
