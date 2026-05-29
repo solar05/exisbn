@@ -660,7 +660,7 @@ defmodule Exisbn do
   defp normalize(isbn) do
     isbn
     |> String.split("", trim: true)
-    |> Enum.filter(fn ch -> is_digit(ch) || ch == "X" end)
+    |> Enum.filter(fn ch -> digit?(ch) || ch == "X" end)
     |> Enum.join()
   end
 
@@ -689,7 +689,7 @@ defmodule Exisbn do
     String.slice(str, amount..String.length(str))
   end
 
-  defp is_digit(ch) do
+  defp digit?(ch) do
     String.contains?("0123456789", ch)
   end
 
@@ -725,7 +725,10 @@ defmodule Exisbn do
   end
 
   defp fetch_ranges(isbn) do
-    Map.get(fetch_info(isbn), "ranges")
+    case fetch_info(isbn) do
+      nil -> []
+      info -> Map.get(info, "ranges", [])
+    end
   end
 
   defp hyphenate_isbn13(isbn) when is_bitstring(isbn) do
