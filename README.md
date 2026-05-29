@@ -1,4 +1,5 @@
 [![CI](https://github.com/solar05/exisbn/actions/workflows/elixir.yml/badge.svg)](https://github.com/solar05/exisbn/actions/workflows/elixir.yml)
+[![codecov](https://codecov.io/gh/solar05/exisbn/graph/badge.svg?token=BJ232PTWT7)](https://codecov.io/gh/solar05/exisbn)
 ![Hex.pm](https://img.shields.io/hexpm/v/exisbn)
 ![Hex.pm](https://img.shields.io/hexpm/l/exisbn)
 
