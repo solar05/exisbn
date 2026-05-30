@@ -10,12 +10,16 @@ defmodule ExisbnTest do
     assert {:ok, _} = Exisbn.hyphenate("9798893031355")
   end
 
-  test "publisher_zone returns error for unknown registration group" do
-    assert {:error, :invalid_isbn} = Exisbn.publisher_zone("9799012345674")
+  test "publisher_zone returns unknown_group for unknown registration group" do
+    assert {:error, :unknown_group} = Exisbn.publisher_zone("9799012345674")
   end
 
-  test "publisher_zone! raises for unknown registration group" do
-    assert_raise ArgumentError, "Invalid ISBN", fn ->
+  test "publisher_zone returns invalid_isbn for structurally invalid input" do
+    assert {:error, :invalid_isbn} = Exisbn.publisher_zone("str")
+  end
+
+  test "publisher_zone! raises Unknown registration group for unknown group" do
+    assert_raise ArgumentError, "Unknown registration group", fn ->
       Exisbn.publisher_zone!("9799012345674")
     end
   end
@@ -205,6 +209,16 @@ defmodule ExisbnTest do
     end
   end
 
+  describe "publisher_country_code/1" do
+    test "returns unknown_group for unknown registration group" do
+      assert {:error, :unknown_group} = Exisbn.publisher_country_code("9799012345674")
+    end
+
+    test "returns invalid_isbn for structurally invalid input" do
+      assert {:error, :invalid_isbn} = Exisbn.publisher_country_code("str")
+    end
+  end
+
   describe "publisher_country_code!/1" do
     test "returns country code string" do
       assert Exisbn.publisher_country_code!("9788535902778") == "BR"
@@ -217,6 +231,12 @@ defmodule ExisbnTest do
     test "raises ArgumentError for invalid ISBN" do
       assert_raise ArgumentError, "Invalid ISBN", fn ->
         Exisbn.publisher_country_code!("str")
+      end
+    end
+
+    test "raises Unknown registration group for unknown group" do
+      assert_raise ArgumentError, "Unknown registration group", fn ->
+        Exisbn.publisher_country_code!("9799012345674")
       end
     end
   end
@@ -304,6 +324,77 @@ defmodule ExisbnTest do
 
     test "rejects string that normalizes to wrong length" do
       refute Exisbn.valid?("97885359027")
+    end
+  end
+
+  describe "isbn_type/1" do
+    test "returns :isbn13 for a valid ISBN-13" do
+      assert Exisbn.isbn_type("9788535902778") == :isbn13
+    end
+
+    test "returns :isbn13 for a hyphenated ISBN-13" do
+      assert Exisbn.isbn_type("978-85-359-0277-8") == :isbn13
+    end
+
+    test "returns :isbn10 for a valid ISBN-10" do
+      assert Exisbn.isbn_type("85-359-0277-5") == :isbn10
+    end
+
+    test "returns :isbn10 for a valid ISBN-10 with X check digit" do
+      assert Exisbn.isbn_type("887385107X") == :isbn10
+    end
+
+    test "returns :invalid for a structurally invalid string" do
+      assert Exisbn.isbn_type("invalid") == :invalid
+    end
+
+    test "returns :invalid for wrong-length digit string" do
+      assert Exisbn.isbn_type("12345") == :invalid
+    end
+
+    test "returns :invalid when check digit is wrong" do
+      assert Exisbn.isbn_type("9788535902770") == :invalid
+    end
+  end
+
+  describe "isbn13_prefix_group/1" do
+    test "returns 978 for standard ISBN-13" do
+      assert {:ok, "978"} = Exisbn.isbn13_prefix_group("9788535902778")
+    end
+
+    test "returns 979 for 979-prefix ISBN-13" do
+      assert {:ok, "979"} = Exisbn.isbn13_prefix_group("9798893031355")
+    end
+
+    test "accepts hyphenated ISBN-13" do
+      assert {:ok, "978"} = Exisbn.isbn13_prefix_group("978-85-359-0277-8")
+    end
+
+    test "returns error for valid ISBN-10" do
+      assert {:error, :invalid_isbn} = Exisbn.isbn13_prefix_group("85-359-0277-5")
+    end
+
+    test "returns error for invalid input" do
+      assert {:error, :invalid_isbn} = Exisbn.isbn13_prefix_group("str")
+    end
+  end
+
+  describe "isbn13_prefix_group!/1" do
+    test "returns prefix group on success" do
+      assert Exisbn.isbn13_prefix_group!("9788535902778") == "978"
+      assert Exisbn.isbn13_prefix_group!("9798893031355") == "979"
+    end
+
+    test "raises ArgumentError for invalid input" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.isbn13_prefix_group!("str")
+      end
+    end
+
+    test "raises ArgumentError for ISBN-10" do
+      assert_raise ArgumentError, "Invalid ISBN", fn ->
+        Exisbn.isbn13_prefix_group!("85-359-0277-5")
+      end
     end
   end
 

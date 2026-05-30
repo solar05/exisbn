@@ -10,6 +10,7 @@ A lightweight Elixir library for working with ISBN (International Standard Book 
 ## Features
 
 - **Validation** — Check if an ISBN-10 or ISBN-13 is valid
+- **Type Detection** — Identify whether an ISBN is ISBN-10, ISBN-13, or invalid
 - **Conversion** — Convert between ISBN-10 and ISBN-13 formats
 - **Hyphenation** — Format ISBNs with correct hyphens
 - **Check Digits** — Calculate and verify ISBN check digits
@@ -39,6 +40,12 @@ Then run `mix deps.get` to fetch the dependency.
 Exisbn.valid?("978-85-359-0277-8")
 # => true
 
+# Detect ISBN type
+Exisbn.isbn_type("978-85-359-0277-8")
+# => :isbn13
+Exisbn.isbn_type("85-359-0277-5")
+# => :isbn10
+
 # Convert ISBN-10 to ISBN-13
 Exisbn.isbn10_to_13("85-359-0277-5")
 # => {:ok, "9788535902778"}
@@ -55,6 +62,10 @@ Exisbn.publisher_zone("9788535902778")
 Exisbn.publisher_country_code("9788535902778")
 # => {:ok, "BR"}
 
+# Get the GS1 prefix group (978 or 979)
+Exisbn.isbn13_prefix_group("9788535902778")
+# => {:ok, "978"}
+
 # Fetch all metadata at once
 Exisbn.fetch_metadata("9788535902778")
 # => {:ok, %{prefix: "978-85", zone: "Brazil", country_code: "BR",
@@ -62,6 +73,16 @@ Exisbn.fetch_metadata("9788535902778")
 ```
 
 ### Validation Functions
+
+#### `isbn_type(isbn)` — Detect ISBN type
+
+Returns `:isbn10`, `:isbn13`, or `:invalid`. Never raises.
+
+```elixir
+Exisbn.isbn_type("978-85-359-0277-8")   # => :isbn13
+Exisbn.isbn_type("85-359-0277-5")       # => :isbn10
+Exisbn.isbn_type("invalid")             # => :invalid
+```
 
 #### `valid?(isbn)` — Validate ISBN
 
@@ -188,6 +209,33 @@ Exisbn.hyphenate("str")                    # => {:error, :invalid_isbn}
 # Bang form
 Exisbn.hyphenate!("9788535902778")         # => "978-85-359-0277-8"
 Exisbn.hyphenate!("0306406152")            # => "0-306-40615-2"
+```
+
+#### `isbn13_prefix_group(isbn)` / `isbn13_prefix_group!(isbn)` — Get GS1 prefix group
+
+Returns `"978"` or `"979"` for a valid ISBN-13. Returns `{:error, :invalid_isbn}` for anything
+that is not a valid ISBN-13 (including valid ISBN-10s — use `isbn10_to_13/1` first if needed).
+
+```elixir
+# Standard form
+Exisbn.isbn13_prefix_group("9788535902778")    # => {:ok, "978"}
+Exisbn.isbn13_prefix_group("9798893031355")    # => {:ok, "979"}
+Exisbn.isbn13_prefix_group("978-85-359-0277-8")# => {:ok, "978"}
+Exisbn.isbn13_prefix_group("85-359-0277-5")    # => {:error, :invalid_isbn}  # ISBN-10
+
+# Bang form
+Exisbn.isbn13_prefix_group!("9788535902778")   # => "978"
+Exisbn.isbn13_prefix_group!("str")             # ** (ArgumentError) Invalid ISBN
+```
+
+Useful for quickly checking whether an ISBN-13 can be converted to ISBN-10 (only `"978"` prefix):
+
+```elixir
+case Exisbn.isbn13_prefix_group(isbn) do
+  {:ok, "978"} -> Exisbn.isbn13_to_10(isbn)
+  {:ok, "979"} -> {:error, :no_isbn10_equivalent}
+  error        -> error
+end
 ```
 
 ### Metadata Extraction Functions
@@ -398,18 +446,18 @@ Normalization strips everything except digits and `X`, then upcases the result.
 
 Standard functions return tagged error tuples:
 
-| Error atom | Meaning |
-|---|---|
-| `:invalid_isbn` | ISBN is structurally invalid (wrong length, bad check digit, non-digit chars) |
-| `:unknown_group` | ISBN is valid but its registration group is not in the dataset |
-| `:unknown_publisher` | Registration group is known but has no publisher ranges defined |
-| `:no_isbn10_equivalent` | ISBN-13 with `979` prefix has no ISBN-10 equivalent |
+| Error atom | Meaning | Functions that can return it |
+|---|---|---|
+| `:invalid_isbn` | ISBN is structurally invalid (wrong length, bad check digit, non-digit chars) | all |
+| `:unknown_group` | ISBN is valid but its registration group is not in the dataset | `fetch_prefix`, `publisher_zone`, `publisher_country_code`, `fetch_registrant_element`, `fetch_publication_element`, `fetch_metadata`, `hyphenate` |
+| `:unknown_publisher` | Registration group is known but has no publisher ranges defined | `fetch_registrant_element`, `fetch_publication_element`, `fetch_metadata`, `hyphenate` |
+| `:no_isbn10_equivalent` | ISBN-13 with `979` prefix has no ISBN-10 equivalent | `isbn13_to_10` |
 
 ```elixir
-case Exisbn.fetch_prefix("9799012345674") do
-  {:ok, prefix} -> IO.puts("Prefix: #{prefix}")
-  {:error, :invalid_isbn} -> IO.puts("Invalid ISBN")
-  {:error, :unknown_group} -> IO.puts("Registration group not in dataset")
+case Exisbn.publisher_zone("9799012345674") do
+  {:ok, zone}               -> IO.puts("Zone: #{zone}")
+  {:error, :invalid_isbn}   -> IO.puts("Invalid ISBN")
+  {:error, :unknown_group}  -> IO.puts("Registration group not in dataset")
 end
 ```
 

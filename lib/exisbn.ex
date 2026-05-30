@@ -268,8 +268,8 @@ defmodule Exisbn do
   @doc """
   Takes an ISBN and returns its publisher zone.
 
-  Returns `{:error, :invalid_isbn}` for ISBNs whose registration group
-  is not present in the dataset.
+  Returns `{:error, :invalid_isbn}` for structurally invalid ISBNs and
+  `{:error, :unknown_group}` when the registration group is not in the dataset.
 
   ## Examples
 
@@ -280,15 +280,16 @@ defmodule Exisbn do
       iex> Exisbn.publisher_zone("str")
       {:error, :invalid_isbn}
       iex> Exisbn.publisher_zone("9799012345674")
-      {:error, :invalid_isbn}
+      {:error, :unknown_group}
   """
-  @spec publisher_zone(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec publisher_zone(String.t()) ::
+          {:ok, String.t()} | {:error, :invalid_isbn | :unknown_group}
   def publisher_zone(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
       case fetch_info(prepared_isbn) do
-        nil -> {:error, :invalid_isbn}
+        nil -> {:error, :unknown_group}
         info -> {:ok, Map.get(info, "name")}
       end
     else
@@ -309,7 +310,7 @@ defmodule Exisbn do
       ** (ArgumentError) Invalid ISBN
 
       iex> Exisbn.publisher_zone!("9799012345674")
-      ** (ArgumentError) Invalid ISBN
+      ** (ArgumentError) Unknown registration group
   """
   @spec publisher_zone!(String.t()) :: String.t()
   def publisher_zone!(isbn) when is_bitstring(isbn) do
@@ -335,13 +336,14 @@ defmodule Exisbn do
       iex> Exisbn.publisher_country_code("str")
       {:error, :invalid_isbn}
   """
-  @spec publisher_country_code(String.t()) :: {:ok, String.t() | nil} | {:error, :invalid_isbn}
+  @spec publisher_country_code(String.t()) ::
+          {:ok, String.t() | nil} | {:error, :invalid_isbn | :unknown_group}
   def publisher_country_code(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
       case fetch_info(prepared_isbn) do
-        nil -> {:error, :invalid_isbn}
+        nil -> {:error, :unknown_group}
         info -> {:ok, Map.get(info, "country_code")}
       end
     else
@@ -800,6 +802,88 @@ defmodule Exisbn do
   end
 
   @doc """
+  Returns the type of the ISBN: `:isbn10`, `:isbn13`, or `:invalid`.
+
+  Does not require hyphens or any particular formatting — normalization is applied first.
+
+  ## Examples
+
+      iex> Exisbn.isbn_type("978-85-359-0277-8")
+      :isbn13
+      iex> Exisbn.isbn_type("85-359-0277-5")
+      :isbn10
+      iex> Exisbn.isbn_type("invalid")
+      :invalid
+      iex> Exisbn.isbn_type("9788535902778")
+      :isbn13
+
+  """
+  @spec isbn_type(String.t()) :: :isbn10 | :isbn13 | :invalid
+  def isbn_type(isbn) when is_bitstring(isbn) do
+    normalized = normalize(isbn)
+    len = String.length(normalized)
+
+    cond do
+      len == 10 and checkdigit_correct_for_normalized?(normalized) -> :isbn10
+      len == 13 and checkdigit_correct_for_normalized?(normalized) -> :isbn13
+      true -> :invalid
+    end
+  end
+
+  @doc """
+  Returns the GS1 prefix group (`"978"` or `"979"`) of a valid ISBN-13.
+
+  Returns `{:error, :invalid_isbn}` if the input is not a valid ISBN-13.
+  Accepts hyphenated or plain ISBN-13 strings. ISBN-10 is not accepted —
+  use `isbn10_to_13/1` first if needed.
+
+  ## Examples
+
+      iex> Exisbn.isbn13_prefix_group("9788535902778")
+      {:ok, "978"}
+      iex> Exisbn.isbn13_prefix_group("9798893031355")
+      {:ok, "979"}
+      iex> Exisbn.isbn13_prefix_group("978-85-359-0277-8")
+      {:ok, "978"}
+      iex> Exisbn.isbn13_prefix_group("85-359-0277-5")
+      {:error, :invalid_isbn}
+      iex> Exisbn.isbn13_prefix_group("str")
+      {:error, :invalid_isbn}
+
+  """
+  @spec isbn13_prefix_group(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  def isbn13_prefix_group(isbn) when is_bitstring(isbn) do
+    normalized = normalize(isbn)
+
+    if String.length(normalized) == 13 and checkdigit_correct_for_normalized?(normalized) do
+      {:ok, String.slice(normalized, 0, 3)}
+    else
+      {:error, :invalid_isbn}
+    end
+  end
+
+  @doc """
+  Same as `isbn13_prefix_group/1`, but raises exception.
+
+  ## Examples
+
+      iex> Exisbn.isbn13_prefix_group!("9788535902778")
+      "978"
+      iex> Exisbn.isbn13_prefix_group!("9798893031355")
+      "979"
+      iex> Exisbn.isbn13_prefix_group!("str")
+      ** (ArgumentError) Invalid ISBN
+
+  """
+  @spec isbn13_prefix_group!(String.t()) :: String.t()
+  def isbn13_prefix_group!(isbn) when is_bitstring(isbn) do
+    case isbn13_prefix_group(isbn) do
+      {:ok, group} -> group
+      {:error, reason} -> raise(ArgumentError, format_error(reason))
+    end
+  end
+
+  @doc """
   Normalizes an ISBN string by removing separators and uppercasing.
 
   Strips hyphens, spaces, and any non-digit characters, then upcases the
@@ -830,9 +914,7 @@ defmodule Exisbn do
   def normalize(isbn) do
     isbn
     |> String.upcase()
-    |> String.split("", trim: true)
-    |> Enum.filter(fn ch -> digit?(ch) || ch == "X" end)
-    |> Enum.join()
+    |> String.replace(~r/[^0-9X]/, "")
   end
 
   defp correct_normalized_length?(normalized) do
@@ -860,15 +942,12 @@ defmodule Exisbn do
   end
 
   defp correct?(isbn) do
-    valid?(normalize(isbn))
+    normalized = normalize(isbn)
+    correct_normalized_length?(normalized) and checkdigit_correct_for_normalized?(normalized)
   end
 
   defp drop_chars(str, amount) do
     String.slice(str, amount..String.length(str))
-  end
-
-  defp digit?(ch) do
-    String.contains?("0123456789", ch)
   end
 
   defp search_prefix_range(prefix, body, search_length) do
