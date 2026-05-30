@@ -170,7 +170,8 @@ Exisbn.isbn13_to_10!("invalid")            # ** (ArgumentError) Invalid ISBN
 Exisbn.valid?("8535902775")                # => true
 ```
 
-**Note:** ISBN-13s starting with `979` cannot be converted to ISBN-10 and will return an error.
+**Note:** ISBN-13s starting with `979` cannot be converted to ISBN-10 and will return `{:error, :no_isbn10_equivalent}`.
+The bang form raises `** (ArgumentError) No ISBN-10 equivalent` in this case.
 
 ### Formatting Functions
 
@@ -204,6 +205,7 @@ Exisbn.fetch_prefix("str")                 # => {:error, :invalid_isbn}
 # Bang form
 Exisbn.fetch_prefix!("9788535902778")      # => "978-85"
 Exisbn.fetch_prefix!("str")               # ** (ArgumentError) Invalid ISBN
+Exisbn.fetch_prefix!("9799012345674")      # ** (ArgumentError) Unknown registration group
 ```
 
 #### `publisher_zone(isbn)` / `publisher_zone!(isbn)` — Get publisher zone/country
@@ -271,6 +273,8 @@ Exisbn.fetch_registrant_element("str")                 # => {:error, :invalid_is
 # Bang form
 Exisbn.fetch_registrant_element!("9788535902778")      # => "359"
 Exisbn.fetch_registrant_element!("978-1-86197-876-9")  # => "86197"
+Exisbn.fetch_registrant_element!("9799012345674")      # ** (ArgumentError) Unknown registration group
+Exisbn.fetch_registrant_element!("9786110000000")      # ** (ArgumentError) Unknown publisher
 ```
 
 #### `fetch_metadata(isbn)` / `fetch_metadata!(isbn)` — Get all metadata at once
@@ -353,21 +357,25 @@ Useful for normalizing ISBNs before storing in a database or comparing values.
 
 ## Input Handling
 
-The library is flexible with input formatting:
+The library is flexible with input formatting. Validation operates on the normalized form
+(digits + optional trailing `X`), so any separator character is accepted as long as the
+extracted digits form a valid ISBN.
 
 ```elixir
 # All these are equivalent:
 Exisbn.valid?("9788535902778")             # => true
 Exisbn.valid?("978-85-359-0277-8")         # => true
 Exisbn.valid?("978 85 359 0277 8")         # => true
+Exisbn.valid?("978.85.359.0277.8")         # => true  (dots work too)
+Exisbn.valid?("978.853590277.8")           # => true  (any grouping)
 
 # ISBN-10 with check digit X
 Exisbn.valid?("887385107X")                # => true (uppercase X)
 Exisbn.valid?("887385107x")                # => true (lowercase x is normalized to X)
 ```
 
-The library normalizes input by upcasing, then extracting digits and the `X` check digit character.
-ISBNs with or without hyphens, spaces, or lowercase `x` are accepted.
+Normalization strips everything except digits and `X`, then upcases the result.
+`normalize/1` can be used explicitly before storing or comparing ISBNs.
 
 ## ISBN Specifications
 
@@ -388,22 +396,37 @@ ISBNs with or without hyphens, spaces, or lowercase `x` are accepted.
 
 ## Error Handling
 
-Standard functions return error tuples:
+Standard functions return tagged error tuples:
+
+| Error atom | Meaning |
+|---|---|
+| `:invalid_isbn` | ISBN is structurally invalid (wrong length, bad check digit, non-digit chars) |
+| `:unknown_group` | ISBN is valid but its registration group is not in the dataset |
+| `:unknown_publisher` | Registration group is known but has no publisher ranges defined |
+| `:no_isbn10_equivalent` | ISBN-13 with `979` prefix has no ISBN-10 equivalent |
 
 ```elixir
-case Exisbn.isbn10_to_13("invalid") do
-  {:ok, converted} -> IO.puts("Converted: #{converted}")
+case Exisbn.fetch_prefix("9799012345674") do
+  {:ok, prefix} -> IO.puts("Prefix: #{prefix}")
   {:error, :invalid_isbn} -> IO.puts("Invalid ISBN")
+  {:error, :unknown_group} -> IO.puts("Registration group not in dataset")
 end
 ```
 
-Bang functions raise `ArgumentError` on failure:
+Bang functions raise `ArgumentError` with a descriptive message:
+
+| Error atom | `ArgumentError` message |
+|---|---|
+| `:invalid_isbn` | `"Invalid ISBN"` |
+| `:unknown_group` | `"Unknown registration group"` |
+| `:unknown_publisher` | `"Unknown publisher"` |
+| `:no_isbn10_equivalent` | `"No ISBN-10 equivalent"` |
 
 ```elixir
 try do
-  Exisbn.isbn10_to_13!("invalid")
+  Exisbn.isbn13_to_10!("9798893031355")
 rescue
-  ArgumentError -> IO.puts("Invalid ISBN")
+  e in ArgumentError -> IO.puts(e.message)  # "No ISBN-10 equivalent"
 end
 ```
 

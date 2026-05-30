@@ -1,9 +1,7 @@
 defmodule Exisbn.Regions do
-  @moduledoc """
-  Regions dataset for internal library use.
-  """
+  @moduledoc false
 
-  @dataset %{
+  @raw_dataset %{
     "978-99973" => %{
       "name" => "Mongolia",
       "country_code" => "MN",
@@ -1769,6 +1767,15 @@ defmodule Exisbn.Regions do
       "ranges" => [["00", "19"], ["200", "599"], ["7000", "7999"], ["90000", "99999"]]
     }
   }
+
+  @dataset Map.new(@raw_dataset, fn {prefix, info} ->
+             ranges =
+               Enum.map(info["ranges"], fn [lo, hi] ->
+                 {String.to_integer(lo), String.to_integer(hi), String.length(hi)}
+               end)
+
+             {prefix, Map.put(info, "ranges", ranges)}
+           end)
 
   def dataset, do: @dataset
 end

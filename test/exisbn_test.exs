@@ -46,7 +46,7 @@ defmodule ExisbnTest do
   end
 
   test "isbn13_to_10! raises for 979-prefix ISBN" do
-    assert_raise ArgumentError, "Invalid ISBN", fn ->
+    assert_raise ArgumentError, "No ISBN-10 equivalent", fn ->
       Exisbn.isbn13_to_10!("9798893031355")
     end
   end
@@ -158,7 +158,7 @@ defmodule ExisbnTest do
     end
 
     test "raises ArgumentError for unknown group" do
-      assert_raise ArgumentError, "Invalid ISBN", fn ->
+      assert_raise ArgumentError, "Unknown registration group", fn ->
         Exisbn.fetch_metadata!("9799012345674")
       end
     end
@@ -253,7 +253,60 @@ defmodule ExisbnTest do
     end
   end
 
+  describe "bang functions propagate specific error reasons" do
+    test "fetch_prefix! raises Unknown registration group for unregistered 979 group" do
+      assert_raise ArgumentError, "Unknown registration group", fn ->
+        Exisbn.fetch_prefix!("9799012345674")
+      end
+    end
+
+    test "fetch_registrant_element! raises Unknown registration group" do
+      assert_raise ArgumentError, "Unknown registration group", fn ->
+        Exisbn.fetch_registrant_element!("9799012345674")
+      end
+    end
+
+    test "fetch_registrant_element! raises Unknown publisher for empty ranges" do
+      assert_raise ArgumentError, "Unknown publisher", fn ->
+        Exisbn.fetch_registrant_element!("9786110000000")
+      end
+    end
+
+    test "fetch_publication_element! raises Unknown registration group" do
+      assert_raise ArgumentError, "Unknown registration group", fn ->
+        Exisbn.fetch_publication_element!("9799012345674")
+      end
+    end
+
+    test "fetch_publication_element! raises Unknown publisher for empty ranges" do
+      assert_raise ArgumentError, "Unknown publisher", fn ->
+        Exisbn.fetch_publication_element!("9786110000000")
+      end
+    end
+
+    test "fetch_metadata! raises Unknown publisher for empty ranges" do
+      assert_raise ArgumentError, "Unknown publisher", fn ->
+        Exisbn.fetch_metadata!("9786110000000")
+      end
+    end
+  end
+
   # normalize/1 tests
+  describe "valid? validates by normalized length" do
+    test "accepts ISBNs with unconventional separator grouping" do
+      # Dots with non-standard grouping: digits normalize to valid ISBN-13
+      assert Exisbn.valid?("978.853590277.8")
+    end
+
+    test "rejects string that normalizes to empty" do
+      refute Exisbn.valid?("invalid")
+    end
+
+    test "rejects string that normalizes to wrong length" do
+      refute Exisbn.valid?("97885359027")
+    end
+  end
+
   describe "normalize/1" do
     test "strips hyphens from ISBN-13" do
       assert Exisbn.normalize("978-85-359-0277-8") == "9788535902778"
