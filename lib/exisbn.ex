@@ -3,6 +3,8 @@ defmodule Exisbn do
 
   alias Exisbn.Regions
 
+  @non_isbn_chars ~r/[^0-9X]/
+
   @moduledoc """
   Documentation for `Exisbn`.
   """
@@ -397,7 +399,7 @@ defmodule Exisbn do
     if correct?(isbn) do
       prepared_isbn = prepare_isbn_13(isbn)
 
-      case search_prefix_range(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3), 0) do
+      case search_prefix_range(String.slice(prepared_isbn, 0..2), drop_chars(prepared_isbn, 3)) do
         nil -> {:error, :unknown_group}
         prefix -> {:ok, prefix}
       end
@@ -753,47 +755,37 @@ defmodule Exisbn do
     normalized = normalize(isbn)
 
     if String.length(normalized) in 8..10 do
-      nsum =
-        normalized
-        |> String.slice(0..8)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          (10 - ind) * val
-        end)
-        |> Enum.reduce(&+/2)
-
+      nsum = isbn10_sum(binary_part(normalized, 0, min(9, byte_size(normalized))), 10, 0)
       digit = Integer.mod(11 - Integer.mod(nsum, 11), 11)
-      result = if digit == 10, do: "X", else: to_string(digit)
-      {:ok, result}
+      {:ok, if(digit == 10, do: "X", else: to_string(digit))}
     else
       {:error, :invalid_isbn}
     end
   end
+
+  defp isbn10_sum(<<d, rest::binary>>, weight, acc),
+    do: isbn10_sum(rest, weight - 1, acc + (d - ?0) * weight)
+
+  defp isbn10_sum(<<>>, _weight, acc), do: acc
 
   defp calculate_isbn13_checkdigit(isbn) do
     normalized = normalize(isbn)
 
     if String.length(normalized) in 11..13 do
-      nsum =
-        normalized
-        |> String.slice(0..11)
-        |> String.split("", trim: true)
-        |> Enum.map(&String.to_integer/1)
-        |> Enum.with_index()
-        |> Enum.map(fn {val, ind} ->
-          if Integer.is_odd(ind), do: val * 3, else: val
-        end)
-        |> Enum.reduce(&+/2)
-
+      nsum = isbn13_sum(binary_part(normalized, 0, min(12, byte_size(normalized))), 0, 0)
       digit = 10 - Integer.mod(nsum, 10)
-      result = if digit == 10, do: 0, else: digit
-      {:ok, to_string(result)}
+      {:ok, to_string(if(digit == 10, do: 0, else: digit))}
     else
       {:error, :invalid_isbn}
     end
   end
+
+  defp isbn13_sum(<<d, rest::binary>>, index, acc) do
+    weight = if rem(index, 2) == 0, do: 1, else: 3
+    isbn13_sum(rest, index + 1, acc + (d - ?0) * weight)
+  end
+
+  defp isbn13_sum(<<>>, _index, acc), do: acc
 
   defp prepare_isbn_13(isbn) do
     if isbn10?(isbn) do
@@ -921,7 +913,7 @@ defmodule Exisbn do
   def normalize(isbn) when is_bitstring(isbn) do
     isbn
     |> String.upcase()
-    |> String.replace(~r/[^0-9X]/, "")
+    |> String.replace(@non_isbn_chars, "")
   end
 
   def normalize(_), do: ""
@@ -959,20 +951,13 @@ defmodule Exisbn do
     String.slice(str, amount..String.length(str))
   end
 
-  defp search_prefix_range(prefix, body, search_length) do
-    max_search_length = String.length(body)
+  defp search_prefix_range(gs1_prefix, body) do
+    dataset = Regions.dataset()
 
-    if search_length > max_search_length do
-      nil
-    else
-      search_prefix = "#{prefix}-#{String.slice(body, 0..search_length)}"
-
-      if Map.has_key?(Regions.dataset(), search_prefix) do
-        search_prefix
-      else
-        search_prefix_range(prefix, body, search_length + 1)
-      end
-    end
+    Enum.find_value(0..5, fn len ->
+      key = "#{gs1_prefix}-#{String.slice(body, 0, len + 1)}"
+      if Map.has_key?(dataset, key), do: key
+    end)
   end
 
   defp fetch_body(isbn, prefix) do
