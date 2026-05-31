@@ -24,9 +24,13 @@ defmodule ExisbnTest do
     end
   end
 
-  test "hyphenate returns error for ISBN with empty publisher ranges" do
+  test "hyphenate returns unknown_publisher for ISBN with empty publisher ranges" do
     # 978-611 Thailand has ranges: []
-    assert {:error, :invalid_isbn} = Exisbn.hyphenate("9786110000000")
+    assert {:error, :unknown_publisher} = Exisbn.hyphenate("9786110000000")
+  end
+
+  test "hyphenate returns unknown_group for valid ISBN with unregistered prefix" do
+    assert {:error, :unknown_group} = Exisbn.hyphenate("9799012345674")
   end
 
   test "fetch_registrant_element returns unknown_publisher for empty ranges" do
@@ -271,6 +275,18 @@ defmodule ExisbnTest do
         Exisbn.hyphenate!("str")
       end
     end
+
+    test "raises Unknown publisher for ISBN with empty publisher ranges" do
+      assert_raise ArgumentError, "Unknown publisher", fn ->
+        Exisbn.hyphenate!("9786110000000")
+      end
+    end
+
+    test "raises Unknown registration group for valid ISBN with unregistered prefix" do
+      assert_raise ArgumentError, "Unknown registration group", fn ->
+        Exisbn.hyphenate!("9799012345674")
+      end
+    end
   end
 
   describe "bang functions propagate specific error reasons" do
@@ -395,6 +411,50 @@ defmodule ExisbnTest do
       assert_raise ArgumentError, "Invalid ISBN", fn ->
         Exisbn.isbn13_prefix_group!("85-359-0277-5")
       end
+    end
+  end
+
+  describe "valid?/1 non-string input" do
+    test "returns false for integer input" do
+      refute Exisbn.valid?(9_788_535_902_778)
+    end
+
+    test "returns false for nil" do
+      refute Exisbn.valid?(nil)
+    end
+
+    test "returns false for list" do
+      refute Exisbn.valid?([])
+    end
+  end
+
+  describe "normalize/1 non-string input" do
+    test "returns empty string for integer input" do
+      assert Exisbn.normalize(123) == ""
+    end
+
+    test "returns empty string for nil" do
+      assert Exisbn.normalize(nil) == ""
+    end
+  end
+
+  describe "isbn_type/1 non-string input" do
+    test "returns :invalid for integer input" do
+      assert Exisbn.isbn_type(9_788_535_902_778) == :invalid
+    end
+
+    test "returns :invalid for nil" do
+      assert Exisbn.isbn_type(nil) == :invalid
+    end
+  end
+
+  describe "checkdigit_correct?/1 non-string input" do
+    test "returns false for integer input" do
+      refute Exisbn.checkdigit_correct?(9_788_535_902_778)
+    end
+
+    test "returns false for nil" do
+      refute Exisbn.checkdigit_correct?(nil)
     end
   end
 

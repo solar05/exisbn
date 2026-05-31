@@ -128,6 +128,8 @@ defmodule Exisbn do
     end
   end
 
+  def checkdigit_correct?(_), do: false
+
   @doc """
   Takes an ISBN (10 or 13) and checks its validity by checking the checkdigit, length and characters.
 
@@ -143,10 +145,12 @@ defmodule Exisbn do
       false
   """
   @spec valid?(String.t()) :: boolean
-  def valid?(isbn) do
+  def valid?(isbn) when is_bitstring(isbn) do
     normalized = normalize(isbn)
     correct_normalized_length?(normalized) and checkdigit_correct_for_normalized?(normalized)
   end
+
+  def valid?(_), do: false
 
   @doc """
   Takes an ISBN 10 and converts it to ISBN 13.
@@ -607,7 +611,8 @@ defmodule Exisbn do
       iex> Exisbn.hyphenate("str")
       {:error, :invalid_isbn}
   """
-  @spec hyphenate(String.t()) :: {:ok, String.t()} | {:error, :invalid_isbn}
+  @spec hyphenate(String.t()) ::
+          {:ok, String.t()} | {:error, :invalid_isbn | :unknown_group | :unknown_publisher}
   def hyphenate(isbn) when is_bitstring(isbn) do
     if correct?(isbn) do
       if isbn10?(isbn), do: hyphenate_isbn10(isbn), else: hyphenate_isbn13(isbn)
@@ -830,6 +835,8 @@ defmodule Exisbn do
     end
   end
 
+  def isbn_type(_), do: :invalid
+
   @doc """
   Returns the GS1 prefix group (`"978"` or `"979"`) of a valid ISBN-13.
 
@@ -911,11 +918,13 @@ defmodule Exisbn do
 
   """
   @spec normalize(String.t()) :: String.t()
-  def normalize(isbn) do
+  def normalize(isbn) when is_bitstring(isbn) do
     isbn
     |> String.upcase()
     |> String.replace(~r/[^0-9X]/, "")
   end
+
+  def normalize(_), do: ""
 
   defp correct_normalized_length?(normalized) do
     len = String.length(normalized)
@@ -987,8 +996,6 @@ defmodule Exisbn do
          {:ok, publication} <-
            publication_with_prefix_and_registrant(isbn13, prefix, registrant) do
       {:ok, Enum.join([prefix, registrant, publication, String.last(isbn13)], "-")}
-    else
-      _ -> {:error, :invalid_isbn}
     end
   end
 
@@ -1002,8 +1009,6 @@ defmodule Exisbn do
       checkdigit = isbn |> normalize() |> String.last()
 
       {:ok, Enum.join([isbn10_prefix, registrant, publication, checkdigit], "-")}
-    else
-      _ -> {:error, :invalid_isbn}
     end
   end
 
