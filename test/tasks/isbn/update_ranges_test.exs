@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.Isbn.UpdateRangesTest do
+defmodule Exisbn.Tasks.Isbn.UpdateRangesTest do
   use ExUnit.Case, async: true
 
-  alias Mix.Tasks.Isbn.UpdateRanges
+  alias Exisbn.Tasks.Isbn.UpdateRanges
 
   @fixture_xml File.read!("test/fixtures/sample_rangemessage.xml")
 

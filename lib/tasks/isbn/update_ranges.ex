@@ -1,26 +1,10 @@
-defmodule Mix.Tasks.Isbn.UpdateRanges do
+defmodule Exisbn.Tasks.Isbn.UpdateRanges do
   use Mix.Task
 
-  @shortdoc "Regenerates lib/regions.ex from the official ISBN RangeMessage XML"
+  @shortdoc "Uses for library needs to regenerate datasets."
 
   @moduledoc """
-  Downloads the ISBN RangeMessage XML from isbn-international.org and
-  regenerates `lib/regions.ex` with up-to-date publisher ranges.
-
-  Country code mappings (ISO 3166-1 alpha-2) are read from
-  `priv/country_codes.exs`. New registration groups absent from that file
-  receive `country_code: nil` and a warning is printed.
-
-  ## Usage
-
-      mix isbn.update_ranges
-      mix isbn.update_ranges --xml path/to/RangeMessage.xml
-      mix isbn.update_ranges --url https://example.com/RangeMessage.xml
-
-  ## Options
-
-    * `--xml`  — path to a local XML file (skips network download)
-    * `--url`  — override the default download URL
+  Uses for library needs to regenerate datasets.
   """
 
   @default_url "https://www.isbn-international.org/export_rangemessage.xml"
