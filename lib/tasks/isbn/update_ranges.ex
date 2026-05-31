@@ -1,7 +1,8 @@
-defmodule Exisbn.Tasks.Isbn.UpdateRanges do
+defmodule Mix.Tasks.Isbn.UpdateRanges do
   use Mix.Task
 
   @shortdoc "Uses for library needs to regenerate datasets."
+  @preferred_cli_env :dev
 
   @moduledoc """
   Uses for library needs to regenerate datasets.

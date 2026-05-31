@@ -529,6 +529,29 @@ else
 end
 ```
 
+## Dataset Coverage
+
+The bundled registration-group dataset is generated from the official
+[ISBN International Range Message](https://www.isbn-international.org/export_rangemessage.xml)
+and covers all groups published at the time of the last release.
+
+### 979 prefix
+
+As of the current release, the ISBN standard defines **5 registration groups** under the `979` prefix:
+
+| Prefix | Zone |
+|---|---|
+| `979-8` | United States |
+| `979-10` | France |
+| `979-11` | Korea, Republic |
+| `979-12` | Italy |
+| `979-13` | Spain |
+
+ISBNs from any other `979-*` group will return `{:error, :unknown_group}` from metadata
+and hyphenation functions — the ISBN is still structurally **valid** (passes `valid?/1`),
+but its registration group is not yet assigned in the standard.
+
+
 ## Documentation
 
 Full API documentation with more examples is available at [HexDocs](https://hexdocs.pm/exisbn/Exisbn.html).
