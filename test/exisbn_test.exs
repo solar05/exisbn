@@ -6,8 +6,8 @@ defmodule ExisbnTest do
     assert Exisbn.isbn10_checkdigit("85-359-0277") == {:ok, "5"}
   end
 
-  test "isbn13_checkdigit test" do
-    assert {:ok, _} = Exisbn.hyphenate("9798893031355")
+  test "isbn13_checkdigit returns correct check digit for 979-prefix ISBN" do
+    assert {:ok, "5"} = Exisbn.isbn13_checkdigit("9798893031355")
   end
 
   test "publisher_zone returns unknown_group for unknown registration group" do
