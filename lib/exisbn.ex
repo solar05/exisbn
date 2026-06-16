@@ -1,6 +1,4 @@
 defmodule Exisbn do
-  require Integer
-
   alias Exisbn.Regions
 
   @non_isbn_chars ~r/[^0-9X]/
